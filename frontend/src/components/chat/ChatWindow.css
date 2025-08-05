@@ -1,0 +1,37 @@
+/* Custom styles for chat components */
+
+/* Add some spacing for better readability */
+.cs-message-list {
+  padding-bottom: 10px;
+}
+
+/* Increase MessageInput height to 3 lines */
+.cs-message-input__content-editor-container {
+  min-height: 4.05em !important; /* ~3 lines of text */
+}
+
+.cs-message-input__content-editor {
+  min-height: 4.05em !important;
+}
+
+/* Fix for chat container height */
+.cs-chat-container {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+}
+
+/* Main container should take full height */
+.cs-main-container {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Message list should not overflow and hide input */
+.cs-message-list {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+}
