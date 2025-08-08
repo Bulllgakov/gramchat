@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: gramchat_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: gramchat_db
+      POSTGRES_USER: gramchat
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - gramchat_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: gramchat_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - gramchat_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gramchat_backend
+    restart: always
+    env_file:
+      - .env.production
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - gramchat_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: gramchat_frontend
+    restart: always
+    ports:
+      - "127.0.0.1:5173:80"
+    networks:
+      - gramchat_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  gramchat_network:
+    driver: bridge
