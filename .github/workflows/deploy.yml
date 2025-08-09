@@ -1,0 +1,122 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Позволяет запускать вручную
+
+env:
+  SERVER_HOST: 217.198.6.80
+  SERVER_USER: root
+  SERVER_PATH: /var/www/gramchat
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
+
+    - name: Install and Build Backend
+      run: |
+        cd backend
+        npm ci
+        npm run build
+        npx prisma generate
+        cd ..
+
+    - name: Install and Build Frontend
+      run: |
+        cd frontend
+        npm ci
+        VITE_API_URL=https://api.gramchat.ru npm run build
+        cd ..
+
+    - name: Create deployment archive
+      run: |
+        tar -czf deploy.tar.gz \
+          --exclude=node_modules \
+          --exclude=.git \
+          --exclude=.env \
+          --exclude=.env.local \
+          backend/dist \
+          backend/package*.json \
+          backend/prisma \
+          frontend/dist \
+          frontend/package*.json \
+          docker-compose.production.yml \
+          .env.production.example \
+          nginx-config.txt
+
+    - name: Deploy to server
+      uses: appleboy/scp-action@v0.1.5
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "deploy.tar.gz"
+        target: "/tmp"
+
+    - name: Execute deployment on server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Переходим в директорию проекта
+          cd ${{ env.SERVER_PATH }}
+          
+          # Создаем backup текущей версии
+          if [ -d "backend/dist" ]; then
+            tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz backend/dist frontend/dist || true
+          fi
+          
+          # Распаковываем новую версию
+          tar -xzf /tmp/deploy.tar.gz
+          rm /tmp/deploy.tar.gz
+          
+          # Устанавливаем зависимости для production
+          cd backend
+          npm ci --only=production
+          npx prisma generate
+          npx prisma migrate deploy
+          cd ..
+          
+          # Перезапускаем Docker контейнеры
+          docker-compose -f docker-compose.production.yml down
+          docker-compose -f docker-compose.production.yml up -d --build
+          
+          # Проверяем статус
+          docker-compose -f docker-compose.production.yml ps
+          
+          # Очищаем старые backup (оставляем последние 5)
+          ls -t backup-*.tar.gz 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+          
+          echo "Deployment completed successfully!"
+
+    - name: Check deployment status
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ env.SERVER_PATH }}
+          echo "=== Container Status ==="
+          docker-compose -f docker-compose.production.yml ps
+          echo "=== Recent Logs ==="
+          docker-compose -f docker-compose.production.yml logs --tail=20
+          echo "=== Service Health Check ==="
+          curl -s -o /dev/null -w "API: %{http_code}\n" http://localhost:3000/health || echo "API: Failed"
+          curl -s -o /dev/null -w "Frontend: %{http_code}\n" http://localhost:5173 || echo "Frontend: Failed"
