@@ -103,6 +103,22 @@ function AppRoutes() {
 
       <Route 
 
+        path="/create-shop" 
+
+        element={
+
+          <PrivateRoute>
+
+            <DashboardPage showCreateShopForm={true} />
+
+          </PrivateRoute>
+
+        } 
+
+      />
+
+      <Route 
+
         path="/test" 
 
         element={<TestPage />} 

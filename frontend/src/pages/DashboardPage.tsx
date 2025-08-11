@@ -17,18 +17,29 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 
 
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  showCreateShopForm?: boolean;
+}
+
+export function DashboardPage({ showCreateShopForm = false }: DashboardPageProps = {}) {
 
   const { user, logout } = useAuth();
 
   const navigate = useNavigate();
 
-  const [showCreateShop, setShowCreateShop] = useState(true);
+  const [showCreateShop, setShowCreateShop] = useState(showCreateShopForm);
   
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   const profileMenuRef = useRef<HTMLDivElement>(null);
   
+  // Открываем форму создания магазина если пришли с /create-shop
+  useEffect(() => {
+    if (showCreateShopForm && user?.role === 'OWNER' && !user?.shop) {
+      setShowCreateShop(true);
+    }
+  }, [showCreateShopForm, user]);
+
   // Закрываем меню при клике вне его
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
