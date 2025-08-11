@@ -7,7 +7,7 @@ class ApiService {
   
   constructor() {
     this.client = axios.create({
-      baseURL: '/api',
+	baseURL: 'https://api.gramchat.ru',
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json'

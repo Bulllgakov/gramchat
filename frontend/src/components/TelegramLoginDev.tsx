@@ -42,7 +42,7 @@ export function TelegramLoginDev({ inviteCode }: TelegramLoginDevProps) {
       if (user.needsShopCreation) {
         navigate('/create-shop');
       } else {
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || 'Ошибка авторизации';

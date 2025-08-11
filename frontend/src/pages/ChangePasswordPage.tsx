@@ -46,7 +46,7 @@ export function ChangePasswordPage() {
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/');
       }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Ошибка при смене пароля');
@@ -56,7 +56,7 @@ export function ChangePasswordPage() {
   };
 
   const handleSkip = () => {
-    navigate('/dashboard');
+    navigate('/');
   };
 
   return (

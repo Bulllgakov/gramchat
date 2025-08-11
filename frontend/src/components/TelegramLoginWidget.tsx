@@ -79,7 +79,7 @@ export function TelegramLoginWidget({
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/telegram-widget-login', {
+	const response = await axios.post('https://api.gramchat.ru/api/auth/telegram-widget-login', {
         ...user,
         inviteCode
       });
@@ -98,7 +98,7 @@ export function TelegramLoginWidget({
       if (userData.needsShopCreation) {
         navigate('/create-shop');
       } else {
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || 'Ошибка авторизации';

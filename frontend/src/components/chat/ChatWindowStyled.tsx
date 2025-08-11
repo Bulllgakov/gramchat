@@ -13,7 +13,7 @@ import {
 } from '@chatscope/chat-ui-kit-react';
 import { FileUploadInput } from './FileUploadInput';
 
-const API_URL = '/api';
+const API_URL = 'https://api.gramchat.ru';
 
 // Глобальный кеш для аватарок
 const globalAvatarCache = new Map<string, string>();

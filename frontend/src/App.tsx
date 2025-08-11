@@ -13,6 +13,7 @@ import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { setupGlobalErrorHandlers } from './utils/errorHandler';
 
+console.log('API URL:', 'https://api.gramchat.ru');
 function PrivateRoute({ children }: { children: React.ReactElement }) {
 
   const { isAuthenticated, isLoading } = useAuth();
@@ -163,3 +164,4 @@ function App() {
 
 export default App;
 
+ 

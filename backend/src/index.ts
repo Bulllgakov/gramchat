@@ -1,99 +1,127 @@
-
 import express, { Express, Request, Response } from 'express';
+  import cors from 'cors';
+  import dotenv from 'dotenv';
+  import { PrismaClient } from '@prisma/client';
+  import { createServer } from 'http';
+  import { Server } from 'socket.io';
+  import helmet from 'helmet';
+  import compression from 'compression';
+  import morgan from 'morgan';
 
-import cors from 'cors';
+  // Import routes
+  import authRoutes from './routes/auth.routes';
+  import shopRoutes from './routes/shop.routes';
+  import dialogRoutes from './routes/dialog.routes';
+  import adminRoutes from './routes/admin.routes';
+  import ownerRoutes from './routes/owner.routes';
+  import managerRoutes from './routes/manager.routes';
+  import uploadRoutes from './routes/upload.routes';
+  import analyticsRoutes from './routes/analytics.routes';
 
-import dotenv from 'dotenv';
+  // Import middleware
+  import { errorHandler } from './middleware/errorHandler';
 
-import { PrismaClient } from '@prisma/client';
+ (BigInt.prototype as any).toJSON = function() {
+    return this.toString();
+  };
 
+  // Load environment variables
+  dotenv.config();
 
+  // Initialize Express
+  const app: Express = express();
+  const server = createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+      credentials: true
+    }
+  });
 
-// Load environment variables
+  // Initialize Prisma
+  const prisma = new PrismaClient();
 
-dotenv.config();
+  // Middleware
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  }));
+  app.use(compression());
+  app.use(morgan('combined'));
+  app.use(cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    credentials: true
+  }));
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
+  // Health check
+  app.get('/health', (req: Request, res: Response) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
 
+  // API Routes
+  app.use('/auth', authRoutes);
+  app.use('/shops', shopRoutes);
+  app.use('/dialogs', dialogRoutes);
+  app.use('/admin', adminRoutes);
+  app.use('/owner', ownerRoutes);
+  app.use('/managers', managerRoutes);
+  app.use('/upload', uploadRoutes);
+  app.use('/analytics', analyticsRoutes);
 
-// Initialize Express
+  // Error handler
+  app.use(errorHandler);
 
-const app: Express = express();
+  // Socket.IO setup
+  io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
 
-const prisma = new PrismaClient();
-
-
-
-// Middleware
-
-app.use(cors());
-
-app.use(express.json());
-
-
-
-// Health check
-
-app.get('/health', (req: Request, res: Response) => {
-
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-
-});
-
-
-
-// Start server
-
-const PORT = process.env.PORT || 3000;
-
-
-
-async function startServer() {
-
-  try {
-
-    // Test database connection
-
-    await prisma.$connect();
-
-    console.log('✅ Database connected');
-
-    
-
-    // Start server
-
-    app.listen(PORT, () => {
-
-      console.log(`🚀 Server running on port ${PORT}`);
-
-      console.log(`📍 Health check: http://localhost:${PORT}/health`);
-
+    socket.on('join-shop', (shopId: string) => {
+      socket.join(`shop-${shopId}`);
+      console.log(`Socket ${socket.id} joined shop-${shopId}`);
     });
 
-  } catch (error) {
+    socket.on('disconnect', () => {
+      console.log('Client disconnected:', socket.id);
+    });
+  });
 
-    console.error('❌ Failed to start server:', error);
+  // Export io for use in other modules
+  export { io };
 
-    process.exit(1);
+  // Start server
+  const PORT = process.env.PORT || 3000;
 
+  async function startServer() {
+    try {
+      // Test database connection
+      await prisma.$connect();
+      console.log('✅ Database connected');
+
+      // Start server
+      server.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📍 Health check: http://localhost:${PORT}/health`);
+	console.log(`📍 API endpoints registered at: http://localhost:${PORT}`);
+        console.log('📌 Available routes:');
+	console.log('   - POST /auth/telegram-widget-login');
+  	console.log('   - GET  /auth/me');
+  	console.log('   - POST /auth/logout');
+
+
+      });
+    } catch (error) {
+      console.error('❌ Failed to start server:', error);
+      process.exit(1);
+    }
   }
 
-}
+  // Handle shutdown
+  process.on('SIGINT', async () => {
+    console.log('\n👋 Shutting down gracefully...');
+    await prisma.$disconnect();
+    server.close();
+    process.exit(0);
+  });
 
-
-
-// Handle shutdown
-
-process.on('SIGINT', async () => {
-
-  console.log('\n👋 Shutting down gracefully...');
-
-  await prisma.$disconnect();
-
-  process.exit(0);
-
-});
-
-
-
-startServer();
-
+  startServer();

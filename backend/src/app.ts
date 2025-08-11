@@ -80,14 +80,14 @@ export const createApp = async () => {
   // app.get('/api/csrf-token', getCsrfToken);
 
   // Routes с применением специфичных лимитеров
-  app.use('/api/auth', authRoutes); // authLimiter отключен для разработки
-  app.use('/api/shops', shopRoutes); // apiLimiter отключен для разработки
-  app.use('/api/dialogs', dialogRoutes); // apiLimiter отключен для разработки
-  app.use('/api/admin', adminRoutes); // apiLimiter отключен для разработки
-  app.use('/api/owner', ownerRoutes); // apiLimiter отключен для разработки
-  app.use('/api/analytics', analyticsRoutes); // apiLimiter отключен для разработки
-  app.use('/api/upload', uploadRoutes); // apiLimiter отключен для разработки
-  app.use('/api/managers', managerRoutes); // apiLimiter отключен для разработки
+  app.use('/auth', authRoutes); // authLimiter отключен для разработки
+  app.use('/shops', shopRoutes); // apiLimiter отключен для разработки
+  app.use('/dialogs', dialogRoutes); // apiLimiter отключен для разработки
+  app.use('/admin', adminRoutes); // apiLimiter отключен для разработки
+  app.use('/owner', ownerRoutes); // apiLimiter отключен для разработки
+  app.use('/analytics', analyticsRoutes); // apiLimiter отключен для разработки
+  app.use('/upload', uploadRoutes); // apiLimiter отключен для разработки
+  app.use('/managers', managerRoutes); // apiLimiter отключен для разработки
 
   // Health check
   app.get('/health', (req, res) => {
