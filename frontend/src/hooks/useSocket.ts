@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getWsUrl } from '../config/api.config';
 
 let socket: Socket | null = null;
 
@@ -8,7 +9,7 @@ export function useSocket(shopId: string | undefined) {
     if (!shopId) return;
 
     if (!socket) {
-      socket = io('http://localhost:3000', {
+      socket = io(getWsUrl(), {
         transports: ['websocket'],
         upgrade: false
       });
