@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
+import { getApiUrl } from '../../config/api.config';
 import { Dialog, Message } from './types';
+import { getApiUrl } from '../../config/api.config';
 import { FileUploadInput } from './FileUploadInput';
+import { getApiUrl } from '../../config/api.config';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import './ChatWindow.css';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = getApiUrl();
 
 interface ChatWindowProps {
   dialog: Dialog | null;

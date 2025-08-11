@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface Shop {
   id: string;
@@ -35,7 +38,7 @@ export function ShopsList() {
   const fetchShops = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.get('/api/admin/shops', {
+      const response = await axios.get(`${API_URL}/admin/shops`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShops(response.data.shops);
@@ -50,7 +53,7 @@ export function ShopsList() {
   const toggleShopStatus = async (shopId: string, isActive: boolean) => {
     try {
       const token = localStorage.getItem('authToken');
-      await axios.patch(`/api/admin/shops/${shopId}/status`, 
+      await axios.patch(`${API_URL}/admin/shops/${shopId}/status`, 
         { isActive: !isActive },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -67,7 +70,7 @@ export function ShopsList() {
 
     try {
       const token = localStorage.getItem('authToken');
-      await axios.delete(`/api/admin/shops/${shopId}`, {
+      await axios.delete(`${API_URL}/admin/shops/${shopId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchShops();
@@ -255,7 +258,7 @@ function CreateShopModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
     try {
       const token = localStorage.getItem('authToken');
-      await axios.post('/api/admin/shops', formData, {
+      await axios.post(`${API_URL}/admin/shops`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       onSuccess();
@@ -394,7 +397,7 @@ function EditShopModal({
         updateData.botToken = formData.botToken;
       }
 
-      await axios.patch(`/api/admin/shops/${shop.id}`, updateData, {
+      await axios.patch(`${API_URL}/admin/shops/${shop.id}`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       onSuccess();

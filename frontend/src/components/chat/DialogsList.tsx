@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../../config/api.config';
 import { Dialog } from './types';
+import { getApiUrl } from '../../config/api.config';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = getApiUrl();
 
 interface DialogsListProps {
   onSelectDialog: (dialog: Dialog) => void;

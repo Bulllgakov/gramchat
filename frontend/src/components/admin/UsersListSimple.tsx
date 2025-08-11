@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../../config/api.config';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = getApiUrl();
 
 interface User {
   id: string;

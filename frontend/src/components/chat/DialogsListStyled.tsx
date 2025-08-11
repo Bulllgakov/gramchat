@@ -10,8 +10,9 @@ import {
 import { apiService } from '../../services/api.service';
 import { showErrorNotification } from '../../utils/errorHandler';
 import { useAuth } from '../../hooks/useAuth';
+import { getApiUrl } from '../../config/api.config';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = getApiUrl();
 
 // Глобальный кеш для аватарок - вне компонента
 const globalAvatarCache = new Map<string, string>();

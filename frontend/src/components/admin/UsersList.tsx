@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { UserDetailsModal } from './UserDetailsModal';
+import { getApiUrl } from '../../config/api.config';
 
-const API_URL = 'https://api.gramchat.ru';
+const API_URL = getApiUrl();
 
 interface User {
   id: string;

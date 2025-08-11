@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { getApiUrl } from '../../config/api.config';
 import axios from 'axios';
+import { getApiUrl } from '../../config/api.config';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = getApiUrl();
 
 export function QuickActions() {
   const [loading, setLoading] = useState(false);
