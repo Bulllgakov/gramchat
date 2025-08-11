@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { TelegramLoginDev } from './TelegramLoginDev';
+import { getApiUrl } from '../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface TelegramUser {
   id: number;
@@ -79,7 +82,7 @@ export function TelegramLoginWidget({
     setError('');
 
     try {
-	const response = await axios.post('https://api.gramchat.ru/api/auth/telegram-widget-login', {
+	const response = await axios.post(`${API_URL}/auth/telegram-widget-login`, {
         ...user,
         inviteCode
       });
