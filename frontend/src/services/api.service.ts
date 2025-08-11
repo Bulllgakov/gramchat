@@ -1,13 +1,14 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { withRetry } from '../utils/retryUtils';
 import { handleApiError } from '../utils/errorHandler';
+import { getApiUrl } from '../config/api.config';
 
 class ApiService {
   private client: AxiosInstance;
   
   constructor() {
     this.client = axios.create({
-	baseURL: 'https://api.gramchat.ru',
+      baseURL: getApiUrl(),
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json'

@@ -1,5 +1,7 @@
 
-const API_URL = 'https://api.gramchat.ru';
+import { getApiUrl } from '../config/api.config';
+
+const API_URL = getApiUrl();
 
 
 
