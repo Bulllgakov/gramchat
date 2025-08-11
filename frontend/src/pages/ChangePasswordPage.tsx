@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl } from '../config/api.config';
+
+const API_URL = getApiUrl();
 
 export function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -32,7 +35,7 @@ export function ChangePasswordPage() {
     try {
       const token = localStorage.getItem('authToken');
       await axios.post(
-        '/api/auth/change-password',
+        `${API_URL}/auth/change-password`,
         {
           currentPassword,
           newPassword

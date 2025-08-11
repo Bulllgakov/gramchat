@@ -1,4 +1,7 @@
 import axios from 'axios';
+import { getApiUrl } from '../config/api.config';
+
+const API_URL = getApiUrl();
 
 class CsrfService {
   private csrfToken: string = '';
@@ -9,7 +12,7 @@ class CsrfService {
     }
 
     try {
-      const response = await axios.get('/api/csrf-token');
+      const response = await axios.get(`${API_URL}/csrf-token`);
       this.csrfToken = response.data.csrfToken;
       
       // Обновляем токен в axios по умолчанию

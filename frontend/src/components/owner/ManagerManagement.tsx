@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { AccessLimitationBanner, RestrictedActionTooltip } from '../AccessLimitationBanner';
+import { getApiUrl } from '../../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface Manager {
   id: string;
@@ -50,7 +53,7 @@ export function ManagerManagement() {
     try {
       setError('');
       const token = localStorage.getItem('authToken');
-      const response = await axios.get('/api/managers/list', {
+      const response = await axios.get(`${API_URL}/managers/list`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -74,7 +77,7 @@ export function ManagerManagement() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.post('/api/managers/create', formData, {
+      const response = await axios.post(`${API_URL}/managers/create`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -99,7 +102,7 @@ export function ManagerManagement() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.post('/api/managers/reset-access', {
+      const response = await axios.post(`${API_URL}/managers/reset-access`, {
         userId: managerId,
         comment: `Новый инвайт-код для ${managerName}`
       }, {

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface Manager {
   id: string;
@@ -27,7 +30,7 @@ export function ManagersList() {
   const fetchManagers = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.get('/api/owner/managers', {
+      const response = await axios.get(`${API_URL}/owner/managers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setManagers(response.data.managers);

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl } from '../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface TelegramLoginDevProps {
   inviteCode?: string;
@@ -32,7 +35,7 @@ export function TelegramLoginDev({ inviteCode }: TelegramLoginDevProps) {
         inviteCode
       };
 
-      const response = await axios.post('/api/auth/telegram-widget-login', authData);
+      const response = await axios.post(`${API_URL}/auth/telegram-widget-login`, authData);
       const { token, user } = response.data;
       
       // Сохраняем токен

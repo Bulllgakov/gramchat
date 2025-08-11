@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface InviteCode {
   id: string;
@@ -38,7 +41,7 @@ export function InviteCodesManagement() {
   const fetchInviteCodes = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.get('/api/owner/invite-codes', {
+      const response = await axios.get(`${API_URL}/owner/invite-codes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setInviteCodes(response.data.codes);
@@ -53,7 +56,7 @@ export function InviteCodesManagement() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('authToken');
-      await axios.post('/api/owner/invite-codes', formData, {
+      await axios.post(`${API_URL}/owner/invite-codes`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShowCreateForm(false);

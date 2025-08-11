@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
+import { getApiUrl } from '../../config/api.config';
+
+const API_URL = getApiUrl();
 
 interface InviteCode {
   id: string;
@@ -57,7 +60,7 @@ export function InviteCodesAdmin() {
     try {
       setError('');
       const token = localStorage.getItem('authToken');
-      const response = await axios.get('/api/admin/invite-codes', {
+      const response = await axios.get(`${API_URL}/admin/invite-codes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -81,7 +84,7 @@ export function InviteCodesAdmin() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.post('/api/admin/invite-codes', formData, {
+      const response = await axios.post(`${API_URL}/admin/invite-codes`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -107,7 +110,7 @@ export function InviteCodesAdmin() {
   const toggleCodeStatus = async (codeId: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      await axios.patch(`/api/admin/invite-codes/${codeId}/toggle`, {}, {
+      await axios.patch(`${API_URL}/admin/invite-codes/${codeId}/toggle`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchInviteCodes();
@@ -121,7 +124,7 @@ export function InviteCodesAdmin() {
     
     try {
       const token = localStorage.getItem('authToken');
-      await axios.delete(`/api/admin/invite-codes/${codeId}`, {
+      await axios.delete(`${API_URL}/admin/invite-codes/${codeId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchInviteCodes();
