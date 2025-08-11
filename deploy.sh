@@ -35,6 +35,6 @@
 
       echo "✅ Деплой завершен!"
       docker ps | grep gramchat
-  ENDSSH
+ENDSSH
 
-  echo "✨ Готово! Проверьте сайт: https://web.gramchat.ru"
+echo "✨ Готово! Проверьте сайт: https://web.gramchat.ru"

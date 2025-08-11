@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚀 Quick Deploy
+Use `./deploy.sh "commit message"` to automatically deploy changes to production server at 217.198.6.80
+
 ## Project Overview
 
 GramChat is a customer support platform that connects Telegram bots with a web-based management interface. It allows businesses to manage customer conversations from Telegram through a professional web dashboard.
