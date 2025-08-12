@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ КРИТИЧЕСКИ ВАЖНО: API Configuration
+
+**НИКОГДА НЕ ИСПОЛЬЗУЙ ПРЕФИКС `/api` В URL!**
+
+- ❌ **НЕПРАВИЛЬНО:** `https://web.gramchat.ru/api/auth/login`
+- ✅ **ПРАВИЛЬНО:** `https://api.gramchat.ru/auth/login`
+
+### Правильная конфигурация API:
+- **Локальная разработка:** `http://localhost:3000` (БЕЗ префикса /api)
+- **Production:** `https://api.gramchat.ru` (поддомен, БЕЗ префикса /api)
+
+### Почему это важно:
+1. Backend развернут на отдельном поддомене `api.gramchat.ru`
+2. Frontend развернут на `web.gramchat.ru`
+3. Использование префикса `/api` приводит к 404 ошибкам
+4. Эта ошибка уже исправлялась 3 раза - НЕ ВОЗВРАЩАЙ её!
+
+### Файл конфигурации:
+Вся логика API URL находится в файле: `frontend/src/config/api.config.ts`
+
 ## 🚀 Quick Deploy
 Use `./deploy.sh "commit message"` to automatically deploy changes to production server at 217.198.6.80
 

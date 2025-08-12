@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GramChat Dashboard Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            width: 100%;
+            max-width: 1400px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideUp 0.8s ease;
+        }
+        
+        /* Header */
+        .dashboard-header {
+            background: #1a1d23;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0088CC, #28A745);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .shop-selector {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        /* Main Layout */
+        .dashboard-body {
+            display: flex;
+            height: 600px;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #e5e7eb;
+        }
+        
+        .stats-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.6s ease;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1d23;
+        }
+        
+        .stat-change {
+            font-size: 12px;
+            color: #10b981;
+            margin-top: 4px;
+        }
+        
+        .dialog-filters {
+            margin-top: 24px;
+        }
+        
+        .filter-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        
+        .filter-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .filter-item:hover {
+            background: white;
+        }
+        
+        .filter-item.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-count {
+            background: #e5e7eb;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Chat List */
+        .chat-list {
+            width: 350px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+        }
+        
+        .chat-list-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .chat-items {
+            padding: 8px;
+        }
+        
+        .chat-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            animation: slideIn 0.5s ease;
+            position: relative;
+        }
+        
+        .chat-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .chat-item.active {
+            background: #eff6ff;
+            border-left: 3px solid #0088CC;
+        }
+        
+        .chat-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .chat-name {
+            font-weight: 600;
+            color: #1a1d23;
+        }
+        
+        .chat-time {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .chat-preview {
+            font-size: 14px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .unread-badge {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            background: #0088CC;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        /* Chat Window */
+        .chat-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0088CC, #28A745);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .chat-header-text h3 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+        
+        .chat-status {
+            font-size: 12px;
+            color: #10b981;
+        }
+        
+        .chat-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            padding: 8px 12px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Messages */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fafbfc;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            animation: messageSlide 0.3s ease;
+        }
+        
+        .message.received {
+            display: flex;
+            justify-content: flex-start;
+        }
+        
+        .message.sent {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            animation: bubblePop 0.3s ease;
+        }
+        
+        .message.received .message-bubble {
+            background: white;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #0088CC, #0077BB);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        /* Input */
+        .chat-input {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .message-input:focus {
+            border-color: #0088CC;
+        }
+        
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0088CC, #0077BB);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes bubblePop {
+            0% { transform: scale(0.8); }
+            80% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <span style="color: white; font-size: 18px;">G</span>
+                    </div>
+                    <span>GramChat</span>
+                </div>
+                <div class="shop-selector">
+                    <span>🏪 Магазин электроники</span>
+                    <span style="opacity: 0.5;">▼</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="notification-bell">
+                    <span style="font-size: 20px;">🔔</span>
+                    <div class="notification-badge"></div>
+                </div>
+                <div class="user-avatar">АК</div>
+            </div>
+        </div>
+        
+        <!-- Main Body -->
+        <div class="dashboard-body">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="stats-cards">
+                    <div class="stat-card" style="animation-delay: 0.1s;">
+                        <div class="stat-label">Активные диалоги</div>
+                        <div class="stat-value">24</div>
+                        <div class="stat-change">↑ 12% сегодня</div>
+                    </div>
+                    <div class="stat-card" style="animation-delay: 0.2s;">
+                        <div class="stat-label">Время ответа</div>
+                        <div class="stat-value">2 мин</div>
+                        <div class="stat-change">↓ 35% быстрее</div>
+                    </div>
+                    <div class="stat-card" style="animation-delay: 0.3s;">
+                        <div class="stat-label">Решено сегодня</div>
+                        <div class="stat-value">47</div>
+                        <div class="stat-change">✓ Отличный результат</div>
+                    </div>
+                </div>
+                
+                <div class="dialog-filters">
+                    <div class="filter-title">Фильтры</div>
+                    <div class="filter-item active">
+                        <span>🔥 Все диалоги</span>
+                        <span class="filter-count">24</span>
+                    </div>
+                    <div class="filter-item">
+                        <span>👤 Мои диалоги</span>
+                        <span class="filter-count">8</span>
+                    </div>
+                    <div class="filter-item">
+                        <span>⏰ Ожидают ответа</span>
+                        <span class="filter-count">5</span>
+                    </div>
+                    <div class="filter-item">
+                        <span>✅ Решенные</span>
+                        <span class="filter-count">47</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat List -->
+            <div class="chat-list">
+                <div class="chat-list-header">
+                    <input type="text" class="search-box" placeholder="🔍 Поиск по диалогам...">
+                </div>
+                <div class="chat-items">
+                    <div class="chat-item active" style="animation-delay: 0.1s;">
+                        <div class="chat-item-header">
+                            <span class="chat-name">
+                                <span class="status-indicator"></span>
+                                Александр Иванов
+                            </span>
+                            <span class="chat-time">2 мин</span>
+                        </div>
+                        <div class="chat-preview">Здравствуйте! Хочу узнать о доставке...</div>
+                        <span class="unread-badge">2</span>
+                    </div>
+                    
+                    <div class="chat-item" style="animation-delay: 0.2s;">
+                        <div class="chat-item-header">
+                            <span class="chat-name">Мария Петрова</span>
+                            <span class="chat-time">15 мин</span>
+                        </div>
+                        <div class="chat-preview">Спасибо за быстрый ответ!</div>
+                    </div>
+                    
+                    <div class="chat-item" style="animation-delay: 0.3s;">
+                        <div class="chat-item-header">
+                            <span class="chat-name">
+                                <span class="status-indicator"></span>
+                                Сергей из MAX
+                            </span>
+                            <span class="chat-time">23 мин</span>
+                        </div>
+                        <div class="chat-preview">Можно оплатить через СБП?</div>
+                        <span class="unread-badge">1</span>
+                    </div>
+                    
+                    <div class="chat-item" style="animation-delay: 0.4s;">
+                        <div class="chat-item-header">
+                            <span class="chat-name">Елена Смирнова</span>
+                            <span class="chat-time">1 час</span>
+                        </div>
+                        <div class="chat-preview">Отлично, жду курьера завтра</div>
+                    </div>
+                    
+                    <div class="chat-item" style="animation-delay: 0.5s;">
+                        <div class="chat-item-header">
+                            <span class="chat-name">Дмитрий К.</span>
+                            <span class="chat-time">2 часа</span>
+                        </div>
+                        <div class="chat-preview">Есть ли гарантия на товар?</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Window -->
+            <div class="chat-window">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <div class="chat-avatar">АИ</div>
+                        <div class="chat-header-text">
+                            <h3>Александр Иванов</h3>
+                            <div class="chat-status">🟢 Онлайн • Telegram</div>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="action-btn">📌 Закрепить</button>
+                        <button class="action-btn">👥 Передать</button>
+                        <button class="action-btn">✅ Решено</button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages">
+                    <div class="message received" style="animation-delay: 0.1s;">
+                        <div class="message-bubble">
+                            <div class="message-text">Здравствуйте! Хочу узнать о доставке iPhone 15 Pro</div>
+                            <div class="message-time">14:23</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message sent" style="animation-delay: 0.3s;">
+                        <div class="message-bubble">
+                            <div class="message-text">Добрый день, Александр! Рад помочь вам с информацией о доставке. В какой город планируете заказ?</div>
+                            <div class="message-time">14:24</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message received" style="animation-delay: 0.5s;">
+                        <div class="message-bubble">
+                            <div class="message-text">Москва, район Арбат</div>
+                            <div class="message-time">14:25</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message sent" style="animation-delay: 0.7s;">
+                        <div class="message-bubble">
+                            <div class="message-text">Отлично! Доставка в ваш район осуществляется на следующий день после заказа. Стоимость - 300₽. Также доступен самовывоз из нашего магазина на Тверской.</div>
+                            <div class="message-time">14:26</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message received" style="animation-delay: 0.9s;">
+                        <div class="message-bubble">
+                            <div class="typing-indicator">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <div class="input-container">
+                        <input type="text" class="message-input" placeholder="Введите сообщение...">
+                        <button class="send-btn">
+                            <span style="font-size: 20px;">➤</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Add some interactive animations
+        setTimeout(() => {
+            const badge = document.querySelector('.unread-badge');
+            if (badge) {
+                setInterval(() => {
+                    badge.style.transform = 'scale(1.1)';
+                    setTimeout(() => {
+                        badge.style.transform = 'scale(1)';
+                    }, 200);
+                }, 3000);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
