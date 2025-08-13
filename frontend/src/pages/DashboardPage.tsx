@@ -8,6 +8,7 @@ import { AdminPanel } from '../components/admin/AdminPanel';
 import { CreateBotForm } from '../components/bot/CreateBotForm';
 
 import { BotsDashboard } from '../components/bot/BotsDashboard';
+import { ShopDashboardStyled } from '../components/shop/ShopDashboardStyled';
 
 import { AccessLimitationBanner } from '../components/AccessLimitationBanner';
 
@@ -69,9 +70,9 @@ export function DashboardPage({ showCreateBotForm = false }: DashboardPageProps 
   // Показываем шапку только для админов
   const showHeader = user?.role === 'ADMIN';
   
-  // Для владельцев и менеджеров (даже без ботов) рендерим BotsDashboard
+  // Для владельцев и менеджеров показываем стандартную страницу диалогов
   if (user?.role === 'OWNER' || user?.role === 'MANAGER') {
-    return <BotsDashboard userRole={user.role} />;
+    return <ShopDashboardStyled userRole={user.role} />;
   }
 
   return (

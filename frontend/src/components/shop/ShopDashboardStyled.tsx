@@ -11,10 +11,11 @@ import { ChatErrorBoundary } from '../ChatErrorBoundary';
 import { ErrorBoundary } from '../ErrorBoundary';
 
 interface ShopDashboardStyledProps {
-  shop: any;
+  shop?: any;
+  userRole?: string;
 }
 
-export function ShopDashboardStyled({ shop }: ShopDashboardStyledProps) {
+export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps) {
   const [selectedDialog, setSelectedDialog] = useState<Dialog | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -50,35 +51,55 @@ export function ShopDashboardStyled({ shop }: ShopDashboardStyledProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <h2 className="text-xl font-bold">{shop.name}</h2>
-              <div className="flex items-center gap-3 text-blue-100 text-sm">
-                <div className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span>{shop.botUsername.startsWith('@') ? shop.botUsername : `@${shop.botUsername}`}</span>
+              <h2 className="text-xl font-bold">
+                {shop ? shop.name : 'GramChat'}
+              </h2>
+              {shop && (
+                <div className="flex items-center gap-3 text-blue-100 text-sm">
+                  <div className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>{shop.botUsername.startsWith('@') ? shop.botUsername : `@${shop.botUsername}`}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span>{shop.category}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span>{shop.category}</span>
-                </div>
-              </div>
+              )}
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Кнопка подключения бота, если нет ботов */}
+              {!shop && userRole === 'OWNER' && (
+                <button
+                  onClick={() => window.location.href = '/create-bot'}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  title="Подключить бота Telegram"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.56c-.21 2.27-1.13 7.75-1.6 10.29-.2 1.08-.59 1.44-.97 1.47-.82.07-1.45-.54-2.24-.97-1.24-.77-1.94-1.24-3.14-1.99-1.39-.86-.49-1.33.3-2.1.21-.2 3.82-3.5 3.89-3.8.01-.04.01-.19-.07-.27-.09-.08-.22-.05-.32-.03-.13.03-2.3 1.46-6.5 4.29-.61.42-1.17.63-1.67.62-.55-.01-1.6-.31-2.39-.56-.96-.31-1.72-.47-1.66-1 .04-.27.41-.55 1.13-.82 4.43-1.93 7.39-3.2 8.88-3.82 4.23-1.75 5.11-2.06 5.68-2.07.13 0 .4.03.58.17.15.12.19.28.21.44-.01.12-.03.31-.05.47z"/>
+                  </svg>
+                  <span>Подключить бота</span>
+                </button>
+              )}
+              
               {/* Кнопка аналитики для владельцев и менеджеров */}
-              <button
-                onClick={() => setShowAnalytics(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
-                title="Аналитика"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span>Аналитика</span>
-              </button>
+              {shop && (
+                <button
+                  onClick={() => setShowAnalytics(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+                  title="Аналитика"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span>Аналитика</span>
+                </button>
+              )}
               
               {/* Кнопка управления менеджерами для владельцев */}
               {user?.role === 'OWNER' && (
@@ -168,6 +189,8 @@ export function ShopDashboardStyled({ shop }: ShopDashboardStyledProps) {
               dialog={selectedDialog}
               onClose={() => setSelectedDialog(null)}
               onTransfer={user?.role === 'OWNER' ? () => setShowTransfer(true) : undefined}
+              showConnectButtons={!shop && userRole === 'OWNER'}
+              userRole={userRole}
             />
           </ChatErrorBoundary>
         </div>
