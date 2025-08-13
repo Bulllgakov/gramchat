@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AuthPage } from './pages/AuthPage';
-import { ShopDashboard } from './components/shop/ShopDashboard';
+import { ShopDashboardStyled } from './components/shop/ShopDashboardStyled';
 import { AdminPanel } from './components/admin/AdminPanel';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { TestPage } from './pages/TestPage';
@@ -52,16 +52,8 @@ function MainPage() {
     return <AdminPanel />;
   }
   
-  // Создаем заглушку для shop
-  const shopData = {
-    name: 'Диалоги',
-    botUsername: 'не подключен',
-    category: 'Общее',
-    botId: null
-  };
-  
   // Для владельцев и менеджеров показываем страницу диалогов
-  return <ShopDashboard shop={shopData} />;
+  return <ShopDashboardStyled userRole={user?.role} />;
 }
 
 function AppRoutes() {
