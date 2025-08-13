@@ -3,7 +3,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AuthPage } from './pages/AuthPage';
-import { DashboardPage } from './pages/DashboardPage';
+import { ShopDashboardStyled } from './components/shop/ShopDashboardStyled';
+import { AdminPanel } from './components/admin/AdminPanel';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { TestPage } from './pages/TestPage';
 import { OwnerPanelPage } from './pages/OwnerPanelPage';
@@ -42,6 +43,18 @@ function PrivateRoute({ children }: { children: React.ReactElement }) {
 }
 
 
+
+function MainPage() {
+  const { user } = useAuth();
+  
+  // Для админов показываем админ панель
+  if (user?.role === 'ADMIN') {
+    return <AdminPanel />;
+  }
+  
+  // Для владельцев и менеджеров показываем страницу диалогов
+  return <ShopDashboardStyled userRole={user?.role} />;
+}
 
 function AppRoutes() {
 
@@ -94,7 +107,7 @@ function AppRoutes() {
 
           <PrivateRoute>
 
-            <DashboardPage />
+            <MainPage />
 
           </PrivateRoute>
 
