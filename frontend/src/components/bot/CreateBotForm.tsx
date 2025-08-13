@@ -7,6 +7,7 @@ const API_URL = getApiUrl();
 
 interface CreateBotFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 // Функция нормализации username бота
@@ -46,7 +47,7 @@ function validateBotToken(token: string): boolean {
   return tokenRegex.test(token);
 }
 
-export function CreateBotForm({ onSuccess }: CreateBotFormProps) {
+export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     botToken: '',
@@ -111,7 +112,7 @@ export function CreateBotForm({ onSuccess }: CreateBotFormProps) {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       
       // Нормализуем username перед отправкой
       const normalizedData = {
@@ -236,17 +237,29 @@ export function CreateBotForm({ onSuccess }: CreateBotFormProps) {
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`w-full py-2 px-4 rounded-md text-white font-medium transition-colors ${
-            isLoading
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-          }`}
-        >
-          {isLoading ? 'Создание...' : 'Создать бота'}
-        </button>
+        <div className="flex gap-3">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="flex-1 py-2 px-4 rounded-md border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            >
+              Отмена
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={`flex-1 py-2 px-4 rounded-md text-white font-medium transition-colors ${
+              isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+            }`}
+          >
+            {isLoading ? 'Создание...' : 'Создать бота'}
+          </button>
+        </div>
       </form>
     </div>
   );

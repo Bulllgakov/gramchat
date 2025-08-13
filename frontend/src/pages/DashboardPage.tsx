@@ -69,8 +69,8 @@ export function DashboardPage({ showCreateBotForm = false }: DashboardPageProps 
   // Показываем шапку только для админов
   const showHeader = user?.role === 'ADMIN';
   
-  // Если это владелец или менеджер с ботами, рендерим BotsDashboard
-  if (user?.bots && user?.bots.length > 0 && user?.role !== 'ADMIN') {
+  // Для владельцев и менеджеров (даже без ботов) рендерим BotsDashboard
+  if (user?.role === 'OWNER' || user?.role === 'MANAGER') {
     return <BotsDashboard userRole={user.role} />;
   }
 
@@ -201,49 +201,6 @@ export function DashboardPage({ showCreateBotForm = false }: DashboardPageProps 
           <AccessLimitationBanner user={user} className="mb-6" />
         )}
 
-        {/* Создание магазина для владельцев */}
-
-        {user?.role === 'OWNER' && (!user?.bots || user.bots.length === 0) && (
-
-          <div className="bg-white rounded-lg shadow p-6">
-
-            <h2 className="text-lg font-semibold mb-4">Создать магазин</h2>
-
-            {!showCreateBot ? (
-
-              <button
-
-                onClick={() => setShowCreateBot(true)}
-
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-
-              >
-
-                Создать магазин
-
-              </button>
-
-            ) : (
-
-              <ErrorBoundary>
-                <CreateBotForm
-
-                  onSuccess={() => {
-
-                    setShowCreateBot(false);
-
-                    window.location.reload();
-
-                  }}
-
-                />
-              </ErrorBoundary>
-
-            )}
-
-          </div>
-
-        )}
 
         
 

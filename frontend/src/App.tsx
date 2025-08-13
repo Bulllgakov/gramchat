@@ -9,6 +9,7 @@ import { TestPage } from './pages/TestPage';
 import { OwnerPanelPage } from './pages/OwnerPanelPage';
 import { LoginPage } from './pages/LoginPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { CreateBotPage } from './pages/CreateBotPage';
 // import { csrfService } from './services/csrf.service';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { setupGlobalErrorHandlers } from './utils/errorHandler';
@@ -109,7 +110,7 @@ function AppRoutes() {
 
           <PrivateRoute>
 
-            <DashboardPage showCreateBotForm={true} />
+            <CreateBotPage />
 
           </PrivateRoute>
 

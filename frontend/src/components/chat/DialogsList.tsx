@@ -18,18 +18,28 @@ export function DialogsList({ botId, onSelectDialog, selectedDialogId }: Dialogs
   const [filter, setFilter] = useState<'all' | 'NEW' | 'ACTIVE' | 'CLOSED'>('all');
 
   useEffect(() => {
-    fetchDialogs();
-    // Обновляем список каждые 10 секунд
-    // const interval = setInterval(fetchDialogs, 10000); // Отключено для разработки
-    // return () => clearInterval(interval);
+    // Только загружаем диалоги если есть botId
+    if (botId) {
+      fetchDialogs();
+      // Обновляем список каждые 10 секунд
+      // const interval = setInterval(fetchDialogs, 10000); // Отключено для разработки
+      // return () => clearInterval(interval);
+    }
   }, [filter, botId]);
 
   const fetchDialogs = async () => {
+    // Не делаем запрос без botId
+    if (!botId) {
+      setDialogs([]);
+      setLoading(false);
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('authToken');
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('status', filter);
-      if (botId) params.append('botId', botId);
+      params.append('botId', botId);
       
       const response = await fetch(`${API_URL}/dialogs?${params}`, {
         headers: {
@@ -68,6 +78,18 @@ export function DialogsList({ botId, onSelectDialog, selectedDialogId }: Dialogs
     }
   };
 
+  // Если нет botId, показываем сообщение
+  if (!botId) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="text-center text-gray-500">
+          <p className="text-sm">Нет подключенных ботов</p>
+          <p className="text-xs mt-1">Подключите бота для начала работы</p>
+        </div>
+      </div>
+    );
+  }
+  
   if (loading && dialogs.length === 0) return <div className="p-4">Загрузка...</div>;
   if (error) return <div className="p-4 text-red-600">Ошибка: {error}</div>;
 
