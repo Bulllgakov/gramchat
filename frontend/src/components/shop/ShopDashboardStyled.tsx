@@ -52,6 +52,10 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
 
   // Определяем, нужно ли показывать кнопки подключения ботов
   const showConnectButtons = userRole === 'OWNER' && bots.length === 0 && !shop;
+  
+  // Даем возможность показывать интерфейс даже без botId для владельцев
+  // Менеджеры должны иметь botId через shop
+  const botIdToUse = selectedBot?.id || shop?.botId || (userRole === 'OWNER' ? 'placeholder' : undefined);
 
   return (
     <div className="h-screen overflow-hidden bg-gray-50">
@@ -59,16 +63,9 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
         <div className="flex h-full">
           {/* Список диалогов в styled компоненте */}
           <DialogsListStyled
-            dialogList={selectedDialog ? [selectedDialog] : []}
             onSelectDialog={(d) => setSelectedDialog(d)}
             selectedDialogId={selectedDialog?.id}
-            botId={selectedBot?.id || shop?.botId}
-            onDialogUpdate={() => {}}
-            onTransferClick={(dialogId) => {
-              const dialog = { id: dialogId } as Dialog;
-              setSelectedDialog(dialog);
-              setShowTransfer(true);
-            }}
+            botId={botIdToUse}
             onShowAnalytics={() => setShowAnalytics(true)}
             onShowManagers={() => setShowManagersPanel(true)}
             userRole={userRole || user?.role}

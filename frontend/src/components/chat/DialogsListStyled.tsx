@@ -21,9 +21,12 @@ interface DialogsListStyledProps {
   onSelectDialog: (dialog: Dialog) => void;
   selectedDialogId?: string;
   botId?: string;
+  onShowAnalytics?: () => void;
+  onShowManagers?: () => void;
+  userRole?: string;
 }
 
-export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId }: DialogsListStyledProps) {
+export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId, onShowAnalytics, onShowManagers, userRole }: DialogsListStyledProps) {
   const { user } = useAuth();
   const [dialogs, setDialogs] = useState<Dialog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +51,8 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId }: D
   }, [filter, botId]);
 
   const fetchDialogs = async () => {
-    // Не делаем запрос без botId
-    if (!botId) {
+    // Не делаем запрос без botId или если это placeholder
+    if (!botId || botId === 'placeholder') {
       setDialogs([]);
       setLoading(false);
       return;
@@ -186,26 +189,7 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId }: D
     (dialog.customerUsername && dialog.customerUsername.toLowerCase().includes(searchValue.toLowerCase()))
   );
 
-  // Если нет botId, показываем сообщение
-  if (!botId) {
-    return (
-      <Sidebar position="left" scrollable={false}>
-        <div style={{ 
-          height: '100%', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{ color: '#999', fontSize: '14px' }}>
-            <p style={{ margin: '0 0 8px 0' }}>Нет подключенных ботов</p>
-            <p style={{ margin: 0, fontSize: '12px' }}>Подключите бота для просмотра диалогов</p>
-          </div>
-        </div>
-      </Sidebar>
-    );
-  }
+  // Не показываем заглушку - всегда показываем полный интерфейс
 
   return (
     <Sidebar position="left" scrollable={false}>
@@ -270,6 +254,63 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId }: D
             </button>
           )}
         </div>
+      </div>
+      
+      {/* Кнопки аналитики и менеджеров */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '4px', 
+        padding: '8px',
+        borderBottom: '1px solid #e0e0e0'
+      }}>
+        {onShowAnalytics && (
+          <button
+            onClick={onShowAnalytics}
+            style={{
+              flex: 1,
+              padding: '5px 10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              background: 'white',
+              color: '#333',
+              cursor: 'pointer',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px'
+            }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Аналитика
+          </button>
+        )}
+        {userRole === 'OWNER' && onShowManagers && (
+          <button
+            onClick={onShowManagers}
+            style={{
+              flex: 1,
+              padding: '5px 10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              background: 'white',
+              color: '#333',
+              cursor: 'pointer',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px'
+            }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            Менеджеры
+          </button>
+        )}
       </div>
       
       <div style={{ 
