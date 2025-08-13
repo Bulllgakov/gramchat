@@ -16,10 +16,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Добавляем уникальные hash к именам файлов для очистки кэша
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        // Добавляем timestamp для форсированной очистки кэша
+        entryFileNames: `assets/[name]-${Date.now()}-[hash].js`,
+        chunkFileNames: `assets/[name]-${Date.now()}-[hash].js`,
+        assetFileNames: `assets/[name]-${Date.now()}-[hash].[ext]`
       }
     }
   }
