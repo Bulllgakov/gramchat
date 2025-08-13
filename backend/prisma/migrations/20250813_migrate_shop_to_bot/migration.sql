@@ -39,8 +39,14 @@ UPDATE "Dialog" SET "botId" = "shopId" WHERE "shopId" IS NOT NULL;
 -- Make botId required
 ALTER TABLE "Dialog" ALTER COLUMN "botId" SET NOT NULL;
 
+-- Drop foreign key constraint from Dialog to Shop before dropping shopId column
+ALTER TABLE "Dialog" DROP CONSTRAINT IF EXISTS "Dialog_shopId_fkey";
+
 -- Remove shopId from Dialog
 ALTER TABLE "Dialog" DROP COLUMN "shopId";
+
+-- Drop foreign key constraint from InviteCode to Shop before renaming column
+ALTER TABLE "InviteCode" DROP CONSTRAINT IF EXISTS "InviteCode_shopId_fkey";
 
 -- Update InviteCode - rename shopId to botId
 ALTER TABLE "InviteCode" RENAME COLUMN "shopId" TO "botId";
@@ -55,11 +61,14 @@ SELECT gen_random_uuid()::text, "managedShopId", "id", (SELECT "ownerId" FROM "S
 FROM "User"
 WHERE "managedShopId" IS NOT NULL;
 
+-- Drop foreign key constraint from User to Shop before dropping column
+ALTER TABLE "User" DROP CONSTRAINT IF EXISTS "User_managedShopId_fkey";
+
 -- Remove managedShopId from User
 ALTER TABLE "User" DROP COLUMN IF EXISTS "managedShopId";
 
--- Drop Shop table
-DROP TABLE "Shop";
+-- Drop Shop table CASCADE to handle any remaining dependencies
+DROP TABLE "Shop" CASCADE;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Bot_botToken_key" ON "Bot"("botToken");
