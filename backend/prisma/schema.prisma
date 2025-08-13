@@ -7,65 +7,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Shop {
+// Основная модель Bot (заменяет Shop)
+model Bot {
   id          String       @id @default(uuid())
-  name        String
+  name        String       // Название бота для интерфейса
   botToken    String       @unique
   botUsername String       @unique
-  category    String
-  ownerId     String       @unique
+  category    String       // Категория бизнеса
+  ownerId     String       
   isActive    Boolean      @default(true)
+  isApproved  Boolean      @default(false) // Одобрен администратором
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  isApproved  Boolean      @default(false)
+  
+  owner       User         @relation("BotOwner", fields: [ownerId], references: [id])
+  managers    BotManager[] // Менеджеры через промежуточную таблицу
   dialogs     Dialog[]
-  inviteCodes InviteCode[]
-  owner       User         @relation("ShopOwner", fields: [ownerId], references: [id])
-  managers    User[]       @relation("ShopManagers")
+  inviteCodes InviteCode[] // Инвайт-коды привязаны к владельцу, не к боту
 }
 
 model User {
   id                 String         @id @default(uuid())
   telegramId         BigInt?        @unique
-  email              String?        @unique
-  passwordHash       String?
+  email              String?        @unique // Оставляем для обратной совместимости
+  passwordHash       String?        // Оставляем для обратной совместимости
   firstName          String
   lastName           String?
-  username           String?
+  username           String?        // Telegram username
   role               UserRole       @default(MANAGER)
   isActive           Boolean        @default(true)
-  hasFullAccess      Boolean        @default(false) // Для владельцев: true если есть инвайт-код или одобрен админом
-  inviteCodeId       String?
-  requirePasswordChange Boolean     @default(false)
+  hasFullAccess      Boolean        @default(false) // Для владельцев
+  inviteCodeId       String?        // Использованный инвайт-код
+  requirePasswordChange Boolean     @default(false) // Оставляем для обратной совместимости
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
-  managedShopId      String?
-  assignedDialogs    Dialog[]
-  createdInviteCodes InviteCode[]
+  
+  // Связи
+  ownedBots          Bot[]          @relation("BotOwner")
+  managedBots        BotManager[]   // Боты через промежуточную таблицу
+  assignedDialogs    Dialog[]       // Назначенные диалоги
+  createdInviteCodes InviteCode[]   // Созданные инвайт-коды
   sessions           Session[]
   dialogActions      DialogAction[] @relation("UserActions")
   targetedActions    DialogAction[] @relation("TargetUserActions")
-  ownedShop          Shop?          @relation("ShopOwner")
   inviteCode         InviteCode?    @relation("UsedInviteCode", fields: [inviteCodeId], references: [id])
-  managedShop        Shop?          @relation("ShopManagers", fields: [managedShopId], references: [id])
+  
+  // Связи для BotManager
+  botsAssignedByMe   BotManager[]   @relation("AssignedBy")
 }
 
+// Промежуточная таблица для связи Bot-Manager (many-to-many)
+model BotManager {
+  id         String   @id @default(uuid())
+  botId      String
+  userId     String
+  assignedBy String   // Кто назначил (владелец)
+  assignedAt DateTime @default(now())
+  
+  bot        Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assigner   User     @relation("AssignedBy", fields: [assignedBy], references: [id])
+  
+  @@unique([botId, userId]) // Уникальная пара бот-менеджер
+  @@index([userId])
+  @@index([botId])
+}
+
+// Инвайт-коды теперь общие, без привязки к конкретным ботам
 model InviteCode {
   id          String    @id @default(uuid())
   code        String    @unique
   type        CodeType  @default(SINGLE)
-  role        UserRole
+  role        UserRole  @default(MANAGER) // Роль для которой создан код
   maxUses     Int       @default(1)
   usedCount   Int       @default(0)
   expiresAt   DateTime?
-  comment     String?
-  createdById String
-  shopId      String?
+  comment     String?   // Комментарий от владельца
+  createdById String    // Кто создал (владелец)
   createdAt   DateTime  @default(now())
   isActive    Boolean   @default(true)
+  
+  // Связи
   createdBy   User      @relation(fields: [createdById], references: [id])
-  shop        Shop?     @relation(fields: [shopId], references: [id])
   usedByUsers User[]    @relation("UsedInviteCode")
+  
+  // Опциональная связь с ботом (для обратной совместимости)
+  botId       String?
+  bot         Bot?      @relation(fields: [botId], references: [id])
 }
 
 model Dialog {
@@ -75,21 +103,22 @@ model Dialog {
   customerUsername String?
   customerPhotoUrl String?
   status           DialogStatus   @default(NEW)
-  shopId           String
-  assignedToId     String?
+  botId            String         // Привязка к боту
+  assignedToId     String?        // Назначенный менеджер
   assignedAt       DateTime?
   closeReason      CloseReason?
   closedAt         DateTime?
   lastMessageAt    DateTime       @default(now())
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  
   assignedTo       User?          @relation(fields: [assignedToId], references: [id])
-  shop             Shop           @relation(fields: [shopId], references: [id])
+  bot              Bot            @relation(fields: [botId], references: [id])
   messages         Message[]
   actions          DialogAction[]
 
-  @@unique([telegramChatId, shopId])
-  @@index([shopId, status])
+  @@unique([telegramChatId, botId])
+  @@index([botId, status])
   @@index([lastMessageAt])
   @@index([assignedToId])
 }
@@ -98,7 +127,7 @@ model Message {
   id          String      @id @default(uuid())
   dialogId    String
   text        String
-  fromUser    Boolean
+  fromUser    Boolean     // true = от менеджера, false = от клиента
   messageType MessageType @default(TEXT)
   telegramId  BigInt?
   fileUrl     String?     // URL файла на сервере
@@ -124,6 +153,23 @@ model Session {
   @@index([userId])
 }
 
+model DialogAction {
+  id           String     @id @default(uuid())
+  dialogId     String
+  dialog       Dialog     @relation(fields: [dialogId], references: [id])
+  userId       String
+  user         User       @relation("UserActions", fields: [userId], references: [id])
+  action       ActionType
+  targetUserId String?    // Для действия TRANSFERRED - кому передан диалог
+  targetUser   User?      @relation("TargetUserActions", fields: [targetUserId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@index([dialogId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Enums
 enum UserRole {
   ADMIN
   OWNER
@@ -131,9 +177,9 @@ enum UserRole {
 }
 
 enum CodeType {
-  SINGLE
-  MULTI
-  PARTNER
+  SINGLE   // Одноразовый
+  MULTI    // Многоразовый
+  PARTNER  // Партнерский
 }
 
 enum DialogStatus {
@@ -153,24 +199,8 @@ enum MessageType {
 }
 
 enum CloseReason {
-  DEAL
-  CANCELLED
-}
-
-model DialogAction {
-  id           String     @id @default(uuid())
-  dialogId     String
-  dialog       Dialog     @relation(fields: [dialogId], references: [id])
-  userId       String
-  user         User       @relation("UserActions", fields: [userId], references: [id])
-  action       ActionType
-  targetUserId String?    // Для действия TRANSFERRED - кому передан диалог
-  targetUser   User?      @relation("TargetUserActions", fields: [targetUserId], references: [id])
-  createdAt    DateTime   @default(now())
-
-  @@index([dialogId])
-  @@index([userId])
-  @@index([createdAt])
+  DEAL      // Сделка совершена
+  CANCELLED // Отменено
 }
 
 enum ActionType {

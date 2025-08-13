@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { UsersList } from './UsersList';
 import { UsersListSimple } from './UsersListSimple';
-import { ShopsList } from './ShopsList';
+import { BotsList } from './BotsList';
 import { InviteCodesAdmin } from './InviteCodesAdmin';
 
 export function AdminPanel() {
@@ -23,14 +23,14 @@ export function AdminPanel() {
             Пользователи
           </button>
           <button
-            onClick={() => setActiveTab('shops')}
+            onClick={() => setActiveTab('bots')}
             className={`px-6 py-3 text-sm font-medium ${
-              activeTab === 'shops'
+              activeTab === 'bots'
                 ? 'border-b-2 border-blue-500 text-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Магазины
+            Боты
           </button>
           <button
             onClick={() => setActiveTab('invites')}
@@ -48,7 +48,7 @@ export function AdminPanel() {
       <div className="p-6">
         {activeTab === 'users' && (useSimpleList ? <UsersListSimple /> : <UsersList />)}
         
-        {activeTab === 'shops' && <ShopsList />}
+        {activeTab === 'bots' && <BotsList />}
         
         {activeTab === 'invites' && <InviteCodesAdmin />}
       </div>

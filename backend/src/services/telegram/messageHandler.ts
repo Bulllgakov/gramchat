@@ -8,7 +8,7 @@ import https from 'https';
 import { getFileUrl } from '../../middleware/upload';
 
 export async function handleMessage(
-  shopId: string,
+  botId: string,
   bot: TelegramBot,
   msg: TelegramBot.Message,
   botToken: string
@@ -21,7 +21,7 @@ export async function handleMessage(
     let dialog = await prisma.dialog.findFirst({
       where: {
         telegramChatId: BigInt(chatId),
-        shopId
+        botId
       }
     });
 
@@ -47,7 +47,7 @@ export async function handleMessage(
       dialog = await prisma.dialog.create({
         data: {
           telegramChatId: BigInt(chatId),
-          shopId,
+          botId,
           customerName: msg.from?.first_name || 'Unknown',
           customerUsername: msg.from?.username,
           customerPhotoUrl,
@@ -144,7 +144,7 @@ export async function handleMessage(
     // Emit socket event
     const io = global.io;
     if (io) {
-      io.to(`shop-${shopId}`).emit('new-message', {
+      io.to(`bot-${botId}`).emit('new-message', {
         dialogId: dialog.id,
         message: {
           text: messageText,
@@ -161,7 +161,7 @@ export async function handleMessage(
       });
     }
 
-    logger.info(`Message handled for shop ${shopId}, dialog ${dialog.id}`);
+    logger.info(`Message handled for bot ${botId}, dialog ${dialog.id}`);
   } catch (error) {
     logger.error('Error handling message:', error);
   }

@@ -6,11 +6,12 @@ import { getApiUrl } from '../../config/api.config';
 const API_URL = getApiUrl();
 
 interface DialogsListProps {
+  botId?: string;
   onSelectDialog: (dialog: Dialog) => void;
   selectedDialogId?: string;
 }
 
-export function DialogsList({ onSelectDialog, selectedDialogId }: DialogsListProps) {
+export function DialogsList({ botId, onSelectDialog, selectedDialogId }: DialogsListProps) {
   const [dialogs, setDialogs] = useState<Dialog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,14 +22,16 @@ export function DialogsList({ onSelectDialog, selectedDialogId }: DialogsListPro
     // Обновляем список каждые 10 секунд
     // const interval = setInterval(fetchDialogs, 10000); // Отключено для разработки
     // return () => clearInterval(interval);
-  }, [filter]);
+  }, [filter, botId]);
 
   const fetchDialogs = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const params = filter !== 'all' ? `?status=${filter}` : '';
+      const params = new URLSearchParams();
+      if (filter !== 'all') params.append('status', filter);
+      if (botId) params.append('botId', botId);
       
-      const response = await fetch(`${API_URL}/dialogs${params}`, {
+      const response = await fetch(`${API_URL}/dialogs?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

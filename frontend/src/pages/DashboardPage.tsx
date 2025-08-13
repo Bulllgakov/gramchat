@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 
 import { AdminPanel } from '../components/admin/AdminPanel';
 
-import { CreateShopForm } from '../components/shop/CreateShopForm';
+import { CreateBotForm } from '../components/bot/CreateBotForm';
 
-import { ShopDashboardStyled } from '../components/shop/ShopDashboardStyled';
+import { BotsDashboard } from '../components/bot/BotsDashboard';
 
 import { AccessLimitationBanner } from '../components/AccessLimitationBanner';
 
@@ -18,27 +18,27 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 
 
 interface DashboardPageProps {
-  showCreateShopForm?: boolean;
+  showCreateBotForm?: boolean;
 }
 
-export function DashboardPage({ showCreateShopForm = false }: DashboardPageProps = {}) {
+export function DashboardPage({ showCreateBotForm = false }: DashboardPageProps = {}) {
 
   const { user, logout } = useAuth();
 
   const navigate = useNavigate();
 
-  const [showCreateShop, setShowCreateShop] = useState(showCreateShopForm);
+  const [showCreateBot, setShowCreateBot] = useState(showCreateBotForm);
   
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   const profileMenuRef = useRef<HTMLDivElement>(null);
   
-  // Открываем форму создания магазина если пришли с /create-shop
+  // Открываем форму создания бота если пришли с /create-bot
   useEffect(() => {
-    if (showCreateShopForm && user?.role === 'OWNER' && !user?.shop) {
-      setShowCreateShop(true);
+    if (showCreateBotForm && user?.role === 'OWNER' && (!user?.bots || user.bots.length === 0)) {
+      setShowCreateBot(true);
     }
-  }, [showCreateShopForm, user]);
+  }, [showCreateBotForm, user]);
 
   // Закрываем меню при клике вне его
   useEffect(() => {
@@ -69,9 +69,9 @@ export function DashboardPage({ showCreateShopForm = false }: DashboardPageProps
   // Показываем шапку только для админов
   const showHeader = user?.role === 'ADMIN';
   
-  // Если это владелец или менеджер с магазином, рендерим только ShopDashboardStyled
-  if (user?.shop && user?.role !== 'ADMIN') {
-    return <ShopDashboardStyled shop={user.shop} />;
+  // Если это владелец или менеджер с ботами, рендерим BotsDashboard
+  if (user?.bots && user?.bots.length > 0 && user?.role !== 'ADMIN') {
+    return <BotsDashboard userRole={user.role} />;
   }
 
   return (
@@ -139,10 +139,12 @@ export function DashboardPage({ showCreateShopForm = false }: DashboardPageProps
                           </span>
                         </div>
                       )}
-                      {user?.shop && (
+                      {user?.bots && user.bots.length > 0 && (
                         <div className="flex items-center justify-between py-1">
                           <span className="text-sm text-gray-600">Магазин:</span>
-                          <span className="text-sm font-medium text-gray-900">{user.shop.name}</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {user.bots.length === 1 ? user.bots[0].name : `${user.bots.length} ботов`}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -201,17 +203,17 @@ export function DashboardPage({ showCreateShopForm = false }: DashboardPageProps
 
         {/* Создание магазина для владельцев */}
 
-        {user?.role === 'OWNER' && !user?.shop && (
+        {user?.role === 'OWNER' && (!user?.bots || user.bots.length === 0) && (
 
           <div className="bg-white rounded-lg shadow p-6">
 
             <h2 className="text-lg font-semibold mb-4">Создать магазин</h2>
 
-            {!showCreateShop ? (
+            {!showCreateBot ? (
 
               <button
 
-                onClick={() => setShowCreateShop(true)}
+                onClick={() => setShowCreateBot(true)}
 
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
 
@@ -224,11 +226,11 @@ export function DashboardPage({ showCreateShopForm = false }: DashboardPageProps
             ) : (
 
               <ErrorBoundary>
-                <CreateShopForm
+                <CreateBotForm
 
                   onSuccess={() => {
 
-                    setShowCreateShop(false);
+                    setShowCreateBot(false);
 
                     window.location.reload();
 

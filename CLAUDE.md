@@ -10,8 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **ПРАВИЛЬНО:** `https://api.gramchat.ru/auth/login`
 
 ### Правильная конфигурация API:
-- **Локальная разработка:** `http://localhost:3000` (БЕЗ префикса /api)
+- **Локальная разработка:** `http://api.localhost:3000` (поддомен, БЕЗ префикса /api)
 - **Production:** `https://api.gramchat.ru` (поддомен, БЕЗ префикса /api)
+- **Frontend локально:** `http://web.localhost:5173`
+- **Frontend production:** `https://web.gramchat.ru`
 
 ### Почему это важно:
 1. Backend развернут на отдельном поддомене `api.gramchat.ru`
@@ -278,7 +280,7 @@ TELEGRAM_WEBHOOK_DOMAIN=https://your-domain.com
 - Reset database: `docker-compose down -v && docker-compose up -d`
 
 ### Testing Socket.IO Events
-1. Connect to Socket.IO server at http://localhost:3000
+1. Connect to Socket.IO server at http://api.localhost:3000
 2. Join a shop room: `socket.emit('join-shop', shopId)`
 3. Listen for events: `new-message`, `dialog-updated`, etc.
 

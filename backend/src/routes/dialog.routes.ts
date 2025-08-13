@@ -15,23 +15,43 @@ const sendMessageSchema = z.object({
   text: z.string().min(1)
 });
 
-// Get dialogs for shop
+// Get dialogs for bots
 router.get('/', authenticate, async (req, res, next) => {
   try {
-    const { status, page = '1', limit = '20', filter = 'all' } = req.query;
+    const { status, page = '1', limit = '20', filter = 'all', botId } = req.query;
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
-      include: { ownedShop: true, managedShop: true }
-    });
-
-    const shopId = user?.ownedShop?.id || user?.managedShop?.id;
-
-    if (!shopId) {
-      throw new AppError(403, 'No shop access');
+    let botIds: string[] = [];
+    
+    if (req.user!.role === 'OWNER') {
+      // Owner sees dialogs from all their bots
+      const bots = await prisma.bot.findMany({
+        where: { ownerId: req.user!.id },
+        select: { id: true }
+      });
+      botIds = bots.map(b => b.id);
+    } else if (req.user!.role === 'MANAGER') {
+      // Manager sees dialogs from assigned bots
+      const botManagers = await prisma.botManager.findMany({
+        where: { userId: req.user!.id },
+        select: { botId: true }
+      });
+      botIds = botManagers.map(bm => bm.botId);
+    } else if (req.user!.role === 'ADMIN') {
+      // Admin sees all dialogs
+      if (botId) {
+        botIds = [botId as string];
+      } else {
+        const bots = await prisma.bot.findMany({ select: { id: true } });
+        botIds = bots.map(b => b.id);
+      }
     }
 
-    const where: any = { shopId };
+    if (botIds.length === 0) {
+      throw new AppError(403, 'No bot access');
+    }
+
+    // If specific botId is provided, filter to that bot
+    const where: any = botId ? { botId } : { botId: { in: botIds } };
     if (status) {
       where.status = status;
     }
@@ -51,8 +71,8 @@ router.get('/', authenticate, async (req, res, next) => {
       }
     } else if (filter === 'all') {
       // Для владельцев - видят все диалоги включая закрытые
-      if (user?.role === 'OWNER') {
-        // Владельцы видят все диалоги магазина
+      if (req.user?.role === 'OWNER' || req.user?.role === 'ADMIN') {
+        // Владельцы и админы видят все диалоги
       } else {
         // Менеджеры видят только свои и свободные диалоги (без закрытых)
         where.OR = [
@@ -80,7 +100,7 @@ router.get('/', authenticate, async (req, res, next) => {
         assignedToId: true,
         assignedAt: true,
         closedAt: true,
-        shopId: true,
+        botId: true,
         messages: {
           take: 1,
           orderBy: { createdAt: 'desc' }
@@ -123,21 +143,22 @@ router.get('/:id/messages', authenticate, async (req, res, next) => {
 
     const dialog = await prisma.dialog.findUnique({
       where: { id },
-      include: { shop: true }
+      include: { bot: true }
     });
 
     if (!dialog) {
       throw new AppError(404, 'Dialog not found');
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
-      include: { ownedShop: true, managedShop: true }
-    });
-
-    const hasAccess = 
-      dialog.shop.ownerId === req.user!.id ||
-      user?.managedShop?.id === dialog.shopId;
+    // Check if user has access to this bot
+    const hasAccess = req.user!.role === 'ADMIN' || 
+      dialog.bot.ownerId === req.user!.id ||
+      await prisma.botManager.findFirst({
+        where: {
+          botId: dialog.botId,
+          userId: req.user!.id
+        }
+      });
 
     if (!hasAccess) {
       throw new AppError(403, 'Access denied');
@@ -179,31 +200,32 @@ router.post('/:id/messages', authenticate, canSendMessages, messageLimiter, asyn
 
     const dialog = await prisma.dialog.findUnique({
       where: { id },
-      include: { shop: true }
+      include: { bot: true }
     });
 
     if (!dialog) {
       throw new AppError(404, 'Dialog not found');
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
-      include: { ownedShop: true, managedShop: true }
-    });
-
-    const hasAccess = 
-      dialog.shop.ownerId === req.user!.id ||
-      user?.managedShop?.id === dialog.shopId;
+    // Check if user has access to this bot
+    const hasAccess = req.user!.role === 'ADMIN' || 
+      dialog.bot.ownerId === req.user!.id ||
+      await prisma.botManager.findFirst({
+        where: {
+          botId: dialog.botId,
+          userId: req.user!.id
+        }
+      });
 
     if (!hasAccess) {
       throw new AppError(403, 'Access denied');
     }
 
     // Определяем, является ли пользователь владельцем
-    const isOwner = user?.role === 'OWNER';
+    const isOwner = req.user?.role === 'OWNER';
 
     // Send message via Telegram bot
-    const bot = getBot(dialog.shopId);
+    const bot = getBot(dialog.botId);
     if (!bot) {
       throw new AppError(500, 'Bot not available');
     }
@@ -274,21 +296,22 @@ router.patch('/:id/status', authenticate, async (req, res, next) => {
 
     const dialog = await prisma.dialog.findUnique({
       where: { id },
-      include: { shop: true }
+      include: { bot: true }
     });
 
     if (!dialog) {
       throw new AppError(404, 'Dialog not found');
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
-      include: { ownedShop: true, managedShop: true }
-    });
-
-    const hasAccess = 
-      dialog.shop.ownerId === req.user!.id ||
-      user?.managedShop?.id === dialog.shopId;
+    // Check if user has access to this bot
+    const hasAccess = req.user!.role === 'ADMIN' || 
+      dialog.bot.ownerId === req.user!.id ||
+      await prisma.botManager.findFirst({
+        where: {
+          botId: dialog.botId,
+          userId: req.user!.id
+        }
+      });
 
     if (!hasAccess) {
       throw new AppError(403, 'Access denied');
@@ -324,21 +347,22 @@ router.post('/:id/claim', authenticate, async (req, res, next) => {
 
     const dialog = await prisma.dialog.findUnique({
       where: { id },
-      include: { shop: true }
+      include: { bot: true }
     });
 
     if (!dialog) {
       throw new AppError(404, 'Dialog not found');
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
-      include: { ownedShop: true, managedShop: true }
-    });
-
-    const hasAccess = 
-      dialog.shop.ownerId === req.user!.id ||
-      user?.managedShop?.id === dialog.shopId;
+    // Check if user has access to this bot
+    const hasAccess = req.user!.role === 'ADMIN' || 
+      dialog.bot.ownerId === req.user!.id ||
+      await prisma.botManager.findFirst({
+        where: {
+          botId: dialog.botId,
+          userId: req.user!.id
+        }
+      });
 
     if (!hasAccess) {
       throw new AppError(403, 'Access denied');
@@ -388,7 +412,7 @@ router.post('/:id/release', authenticate, async (req, res, next) => {
 
     const dialog = await prisma.dialog.findUnique({
       where: { id },
-      include: { shop: true }
+      include: { bot: true }
     });
 
     if (!dialog) {
@@ -396,7 +420,7 @@ router.post('/:id/release', authenticate, async (req, res, next) => {
     }
 
     // Только назначенный менеджер или владелец могут освободить диалог
-    if (dialog.assignedToId !== req.user!.id && dialog.shop.ownerId !== req.user!.id) {
+    if (dialog.assignedToId !== req.user!.id && dialog.bot.ownerId !== req.user!.id) {
       throw new AppError(403, 'Only assigned manager or owner can release dialog');
     }
 
@@ -435,7 +459,7 @@ router.post('/:id/transfer', authenticate, async (req, res, next) => {
 
     const dialog = await prisma.dialog.findUnique({
       where: { id },
-      include: { shop: true }
+      include: { bot: true }
     });
 
     if (!dialog) {
@@ -443,21 +467,25 @@ router.post('/:id/transfer', authenticate, async (req, res, next) => {
     }
 
     // Только владелец может передавать диалоги
-    if (dialog.shop.ownerId !== req.user!.id) {
-      throw new AppError(403, 'Only shop owner can transfer dialogs');
+    if (dialog.bot.ownerId !== req.user!.id) {
+      throw new AppError(403, 'Only bot owner can transfer dialogs');
     }
 
-    // Проверяем, что менеджер существует и работает в этом магазине
-    const manager = await prisma.user.findFirst({
+    // Проверяем, что менеджер существует и имеет доступ к этому боту
+    const managerAccess = await prisma.botManager.findFirst({
       where: {
-        id: managerId,
-        managedShopId: dialog.shopId,
-        isActive: true
+        userId: managerId,
+        botId: dialog.botId
+      },
+      include: {
+        user: {
+          select: { isActive: true }
+        }
       }
     });
 
-    if (!manager) {
-      throw new AppError(404, 'Manager not found or not active in this shop');
+    if (!managerAccess || !managerAccess.user.isActive) {
+      throw new AppError(404, 'Manager not found or not active for this bot');
     }
 
     const updatedDialog = await prisma.dialog.update({
@@ -521,8 +549,8 @@ router.get('/:id/avatar', async (req, res, next) => {
       where: { id },
       select: { 
         customerPhotoUrl: true,
-        shopId: true,
-        shop: {
+        botId: true,
+        bot: {
           select: {
             ownerId: true
           }
@@ -534,17 +562,21 @@ router.get('/:id/avatar', async (req, res, next) => {
       throw new AppError(404, 'Dialog not found');
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { ownedShop: true, managedShop: true }
-    });
+    // Check if user has access to this bot's dialogs
+    const hasAccess = await (async () => {
+      if (dialog.bot.ownerId === userId) return true;
+      
+      const managerAccess = await prisma.botManager.findFirst({
+        where: {
+          userId: userId,
+          botId: dialog.botId
+        }
+      });
+      
+      return !!managerAccess;
+    })();
 
-    const hasAccess = 
-      dialog.shop.ownerId === userId ||
-      user?.managedShop?.id === dialog.shopId ||
-      user?.ownedShop?.id === dialog.shopId;
-
-    logger.info(`Avatar access check - userId: ${userId}, ownerId: ${dialog.shop.ownerId}, managedShopId: ${user?.managedShop?.id}, dialogShopId: ${dialog.shopId}, hasAccess: ${hasAccess}`);
+    logger.info(`Avatar access check - userId: ${userId}, ownerId: ${dialog.bot.ownerId}, botId: ${dialog.botId}, hasAccess: ${hasAccess}`);
 
     if (!hasAccess) {
       throw new AppError(403, 'Access denied');

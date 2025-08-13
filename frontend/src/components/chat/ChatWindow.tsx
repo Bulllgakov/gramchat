@@ -11,10 +11,11 @@ const API_URL = getApiUrl();
 
 interface ChatWindowProps {
   dialog: Dialog | null;
+  botId?: string;
   onClose: () => void;
 }
 
-export function ChatWindow({ dialog, onClose }: ChatWindowProps) {
+export function ChatWindow({ dialog, botId, onClose }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);

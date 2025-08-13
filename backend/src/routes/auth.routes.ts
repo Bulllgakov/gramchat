@@ -60,8 +60,12 @@ router.post('/telegram-widget-login', async (req, res, next) => {
     let user = await prisma.user.findUnique({
       where: { telegramId },
       include: {
-        ownedShop: true,
-        managedShop: true
+        ownedBots: true,
+        managedBots: {
+          include: {
+            bot: true
+          }
+        }
       }
     });
 
@@ -125,8 +129,12 @@ router.post('/telegram-widget-login', async (req, res, next) => {
           inviteCodeId
         },
         include: {
-          ownedShop: true,
-          managedShop: true
+          ownedBots: true,
+          managedBots: {
+            include: {
+              bot: true
+            }
+          }
         }
       });
     } else {
@@ -139,8 +147,12 @@ router.post('/telegram-widget-login', async (req, res, next) => {
           username: authData.username || user.username
         },
         include: {
-          ownedShop: true,
-          managedShop: true
+          ownedBots: true,
+          managedBots: {
+            include: {
+              bot: true
+            }
+          }
         }
       });
     }
@@ -176,9 +188,9 @@ router.post('/telegram-widget-login', async (req, res, next) => {
         username: user.username,
         role: user.role,
         hasFullAccess: user.hasFullAccess,
-        shop: user.ownedShop || user.managedShop,
-        hasApprovedShop: user.ownedShop?.isApproved ?? false,
-        needsShopCreation: user.role === 'OWNER' && !user.ownedShop
+        bots: user.ownedBots || user.managedBots?.map(mb => mb.bot),
+        hasApprovedBots: user.ownedBots?.some(bot => bot.isApproved) ?? false,
+        needsBotCreation: user.role === 'OWNER' && user.ownedBots?.length === 0
       }
     });
   } catch (error) {
@@ -269,7 +281,7 @@ router.post('/validate-token', async (req, res, next) => {
       console.log('🆕 New user registration:', { isPermanentAdmin, isFirstAdmin, telegramUserId });
       
       let role: UserRole | null = null;
-      let managedShopId: string | undefined;
+      // Managers are assigned to bots after registration
       let inviteCodeId: string | undefined;
       let hasApprovedShop = false; // Флаг для контроля доступа
       
@@ -278,8 +290,7 @@ router.post('/validate-token', async (req, res, next) => {
       } else if (inviteCode) {
         // Проверяем инвайт-код
         const invite = await prisma.inviteCode.findUnique({
-          where: { code: inviteCode },
-          include: { shop: true }
+          where: { code: inviteCode }
         });
         
         if (!invite) {
@@ -301,10 +312,8 @@ router.post('/validate-token', async (req, res, next) => {
         role = invite.role as UserRole;
         inviteCodeId = invite.id;
         
-        // Если инвайт для менеджера и есть shopId - привязываем к магазину
-        if (role === 'MANAGER' && invite.shopId) {
-          managedShopId = invite.shopId;
-        }
+        // Managers are assigned to bots after registration, not during
+        // No need for botId assignment here
         
         hasApprovedShop = true; // Все пользователи с инвайт-кодом получают полный доступ
         
@@ -326,8 +335,8 @@ router.post('/validate-token', async (req, res, next) => {
           lastName: userData.last_name,
           username: userData.username,
           role: role!,
-          inviteCodeId,
-          managedShopId
+          inviteCodeId
+          // Bot assignments handled through BotManager after registration
         }
       });
     } else {
@@ -345,12 +354,16 @@ router.post('/validate-token', async (req, res, next) => {
       throw new AppError(403, 'Account is disabled');
     }
 
-    // Получаем информацию о магазине пользователя
-    const userWithShop = await prisma.user.findUnique({
+    // Получаем информацию о ботах пользователя
+    const userWithBots = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
-        ownedShop: true,
-        managedShop: true
+        ownedBots: true,
+        managedBots: {
+          include: {
+            bot: true
+          }
+        }
       }
     });
 
@@ -368,9 +381,9 @@ router.post('/validate-token', async (req, res, next) => {
         lastName: user.lastName,
         username: user.username,
         role: user.role,
-        shop: userWithShop?.ownedShop || userWithShop?.managedShop,
-        hasApprovedShop: userWithShop?.ownedShop?.isApproved ?? false,
-        needsShopCreation: user.role === 'OWNER' && !userWithShop?.ownedShop
+        bots: userWithBots?.ownedBots || userWithBots?.managedBots?.map(mb => mb.bot),
+        hasApprovedBots: userWithBots?.ownedBots?.some(bot => bot.isApproved) ?? false,
+        needsBotCreation: user.role === 'OWNER' && userWithBots?.ownedBots?.length === 0
       }
     });
   } catch (error) {

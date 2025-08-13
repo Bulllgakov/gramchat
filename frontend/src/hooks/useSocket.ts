@@ -4,9 +4,9 @@ import { getWsUrl } from '../config/api.config';
 
 let socket: Socket | null = null;
 
-export function useSocket(shopId: string | undefined) {
+export function useSocket(botId: string | undefined) {
   useEffect(() => {
-    if (!shopId) return;
+    if (!botId) return;
 
     if (!socket) {
       socket = io(getWsUrl(), {
@@ -15,15 +15,15 @@ export function useSocket(shopId: string | undefined) {
       });
     }
 
-    socket.emit('join-shop', shopId);
-    console.log(`Joined shop room: shop-${shopId}`);
+    socket.emit('join-bot', botId);
+    console.log(`Joined bot room: bot-${botId}`);
 
     return () => {
       if (socket) {
-        socket.emit('leave-shop', shopId);
+        socket.emit('leave-bot', botId);
       }
     };
-  }, [shopId]);
+  }, [botId]);
 
   return socket;
 }

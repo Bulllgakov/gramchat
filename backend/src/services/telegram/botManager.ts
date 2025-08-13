@@ -8,12 +8,12 @@ const bots = new Map<string, TelegramBot>();
 
 export async function setupTelegramBots() {
   try {
-    const shops = await prisma.shop.findMany({
+    const activeBots = await prisma.bot.findMany({
       where: { isActive: true }
     });
 
-    for (const shop of shops) {
-      await createBot(shop.id, shop.botToken);
+    for (const bot of activeBots) {
+      await createBot(bot.id, bot.botToken);
     }
 
     logger.info(`Initialized ${bots.size} Telegram bots`);
@@ -22,7 +22,7 @@ export async function setupTelegramBots() {
   }
 }
 
-export async function createBot(shopId: string, botToken: string) {
+export async function createBot(botId: string, botToken: string) {
   try {
     const bot = new TelegramBot(botToken, {
       polling: config.NODE_ENV !== 'production',
@@ -30,37 +30,37 @@ export async function createBot(shopId: string, botToken: string) {
     });
 
     if (config.NODE_ENV === 'production' && config.TELEGRAM_WEBHOOK_DOMAIN) {
-      const webhookUrl = `${config.TELEGRAM_WEBHOOK_DOMAIN}/api/telegram/webhook/${shopId}`;
+      const webhookUrl = `${config.TELEGRAM_WEBHOOK_DOMAIN}/api/telegram/webhook/${botId}`;
       await bot.setWebHook(webhookUrl);
     }
 
     bot.on('message', async (msg) => {
-      await handleMessage(shopId, bot, msg, botToken);
+      await handleMessage(botId, bot, msg, botToken);
     });
 
     bot.on('error', (error) => {
-      logger.error(`Bot error for shop ${shopId}:`, error);
+      logger.error(`Bot error for bot ${botId}:`, error);
     });
 
-    bots.set(shopId, bot);
-    logger.info(`Bot created for shop ${shopId}`);
+    bots.set(botId, bot);
+    logger.info(`Bot created for bot ${botId}`);
 
     return bot;
   } catch (error) {
-    logger.error(`Failed to create bot for shop ${shopId}:`, error);
+    logger.error(`Failed to create bot for bot ${botId}:`, error);
     throw error;
   }
 }
 
-export function getBot(shopId: string): TelegramBot | undefined {
-  return bots.get(shopId);
+export function getBot(botId: string): TelegramBot | undefined {
+  return bots.get(botId);
 }
 
-export async function removeBot(shopId: string) {
-  const bot = bots.get(shopId);
+export async function removeBot(botId: string) {
+  const bot = bots.get(botId);
   if (bot) {
     await bot.stopPolling();
-    bots.delete(shopId);
-    logger.info(`Bot removed for shop ${shopId}`);
+    bots.delete(botId);
+    logger.info(`Bot removed for bot ${botId}`);
   }
 }

@@ -12,7 +12,8 @@ import { notFoundHandler } from './middleware/notFoundHandler';
 import { generalLimiter, authLimiter, createResourceLimiter, messageLimiter, apiLimiter } from './middleware/rateLimiter';
 import { conditionalCsrf, getCsrfToken } from './middleware/csrf';
 import authRoutes from './routes/auth.routes';
-import shopRoutes from './routes/shop.routes';
+import botRoutes from './routes/bot.routes';
+import botManagerRoutes from './routes/bot-manager.routes';
 import dialogRoutes from './routes/dialog.routes';
 import adminRoutes from './routes/admin.routes';
 import ownerRoutes from './routes/owner.routes';
@@ -81,7 +82,8 @@ export const createApp = async () => {
 
   // Routes с применением специфичных лимитеров
   app.use('/auth', authRoutes); // authLimiter отключен для разработки
-  app.use('/shops', shopRoutes); // apiLimiter отключен для разработки
+  app.use('/bots', botRoutes); // apiLimiter отключен для разработки
+  app.use('/bot-manager', botManagerRoutes); // управление менеджерами ботов
   app.use('/dialogs', dialogRoutes); // apiLimiter отключен для разработки
   app.use('/admin', adminRoutes); // apiLimiter отключен для разработки
   app.use('/owner', ownerRoutes); // apiLimiter отключен для разработки

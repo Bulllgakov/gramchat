@@ -40,9 +40,16 @@ async function startServer() {
     io.on('connection', (socket) => {
       logger.info(`New socket connection: ${socket.id}`);
 
+      socket.on('join-bot', (botId: string) => {
+        socket.join(`bot-${botId}`);
+        logger.info(`Socket ${socket.id} joined bot-${botId}`);
+      });
+      
+      // Legacy support for old clients
       socket.on('join-shop', (shopId: string) => {
-        socket.join(`shop-${shopId}`);
-        logger.info(`Socket ${socket.id} joined shop-${shopId}`);
+        // Redirect to bot room for backward compatibility
+        socket.join(`bot-${shopId}`);
+        logger.info(`Socket ${socket.id} joined bot-${shopId} (legacy shop event)`);
       });
 
       socket.on('disconnect', () => {

@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id          String       @id @default(uuid())
+  name        String
+  botToken    String       @unique
+  botUsername String       @unique
+  category    String
+  ownerId     String       @unique
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isApproved  Boolean      @default(false)
+  dialogs     Dialog[]
+  inviteCodes InviteCode[]
+  owner       User         @relation("ShopOwner", fields: [ownerId], references: [id])
+  managers    User[]       @relation("ShopManagers")
+}
+
+model User {
+  id                 String         @id @default(uuid())
+  telegramId         BigInt?        @unique
+  email              String?        @unique
+  passwordHash       String?
+  firstName          String
+  lastName           String?
+  username           String?
+  role               UserRole       @default(MANAGER)
+  isActive           Boolean        @default(true)
+  hasFullAccess      Boolean        @default(false) // Для владельцев: true если есть инвайт-код или одобрен админом
+  inviteCodeId       String?
+  requirePasswordChange Boolean     @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  managedShopId      String?
+  assignedDialogs    Dialog[]
+  createdInviteCodes InviteCode[]
+  sessions           Session[]
+  dialogActions      DialogAction[] @relation("UserActions")
+  targetedActions    DialogAction[] @relation("TargetUserActions")
+  ownedShop          Shop?          @relation("ShopOwner")
+  inviteCode         InviteCode?    @relation("UsedInviteCode", fields: [inviteCodeId], references: [id])
+  managedShop        Shop?          @relation("ShopManagers", fields: [managedShopId], references: [id])
+}
+
+model InviteCode {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  type        CodeType  @default(SINGLE)
+  role        UserRole
+  maxUses     Int       @default(1)
+  usedCount   Int       @default(0)
+  expiresAt   DateTime?
+  comment     String?
+  createdById String
+  shopId      String?
+  createdAt   DateTime  @default(now())
+  isActive    Boolean   @default(true)
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  shop        Shop?     @relation(fields: [shopId], references: [id])
+  usedByUsers User[]    @relation("UsedInviteCode")
+}
+
+model Dialog {
+  id               String         @id @default(uuid())
+  telegramChatId   BigInt
+  customerName     String
+  customerUsername String?
+  customerPhotoUrl String?
+  status           DialogStatus   @default(NEW)
+  shopId           String
+  assignedToId     String?
+  assignedAt       DateTime?
+  closeReason      CloseReason?
+  closedAt         DateTime?
+  lastMessageAt    DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  assignedTo       User?          @relation(fields: [assignedToId], references: [id])
+  shop             Shop           @relation(fields: [shopId], references: [id])
+  messages         Message[]
+  actions          DialogAction[]
+
+  @@unique([telegramChatId, shopId])
+  @@index([shopId, status])
+  @@index([lastMessageAt])
+  @@index([assignedToId])
+}
+
+model Message {
+  id          String      @id @default(uuid())
+  dialogId    String
+  text        String
+  fromUser    Boolean
+  messageType MessageType @default(TEXT)
+  telegramId  BigInt?
+  fileUrl     String?     // URL файла на сервере
+  fileName    String?     // Оригинальное имя файла
+  fileSize    Int?        // Размер файла в байтах
+  mimeType    String?     // MIME тип файла
+  thumbnailUrl String?    // URL превью для изображений/видео
+  createdAt   DateTime    @default(now())
+  dialog      Dialog      @relation(fields: [dialogId], references: [id])
+
+  @@index([dialogId, createdAt])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
+}
+
+enum UserRole {
+  ADMIN
+  OWNER
+  MANAGER
+}
+
+enum CodeType {
+  SINGLE
+  MULTI
+  PARTNER
+}
+
+enum DialogStatus {
+  NEW
+  ACTIVE
+  CLOSED
+}
+
+enum MessageType {
+  TEXT
+  PHOTO
+  VIDEO
+  DOCUMENT
+  VOICE
+  STICKER
+  LOCATION
+}
+
+enum CloseReason {
+  DEAL
+  CANCELLED
+}
+
+model DialogAction {
+  id           String     @id @default(uuid())
+  dialogId     String
+  dialog       Dialog     @relation(fields: [dialogId], references: [id])
+  userId       String
+  user         User       @relation("UserActions", fields: [userId], references: [id])
+  action       ActionType
+  targetUserId String?    // Для действия TRANSFERRED - кому передан диалог
+  targetUser   User?      @relation("TargetUserActions", fields: [targetUserId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@index([dialogId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum ActionType {
+  ASSIGNED
+  RELEASED
+  TRANSFERRED
+}

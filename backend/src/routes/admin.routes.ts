@@ -23,14 +23,14 @@ const inviteCodeSchema = z.object({
 });
 
 
-const createShopSchema = z.object({
+const createBotSchema = z.object({
   name: z.string().min(1),
   botToken: z.string().min(1),
   category: z.enum(['RETAIL', 'SERVICES', 'FOOD', 'ELECTRONICS', 'FASHION', 'HEALTH', 'OTHER']),
   ownerId: z.string()
 });
 
-const updateShopSchema = z.object({
+const updateBotSchema = z.object({
   name: z.string().min(1).optional(),
   category: z.enum(['RETAIL', 'SERVICES', 'FOOD', 'ELECTRONICS', 'FASHION', 'HEALTH', 'OTHER']).optional(),
   botToken: z.string().min(1).optional()
@@ -47,7 +47,7 @@ router.get('/users/:id', async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        ownedShop: {
+        ownedBots: {
           include: {
             _count: {
               select: {
@@ -57,13 +57,17 @@ router.get('/users/:id', async (req, res, next) => {
             }
           }
         },
-        managedShop: {
+        managedBots: {
           include: {
-            owner: {
-              select: {
-                firstName: true,
-                lastName: true,
-                username: true
+            bot: {
+              include: {
+                owner: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    username: true
+                  }
+                }
               }
             }
           }
@@ -104,7 +108,7 @@ router.get('/users', async (req, res, next) => {
     const users = await prisma.user.findMany({
       where,
       include: {
-        ownedShop: {
+        ownedBots: {
           include: {
             _count: {
               select: {
@@ -114,7 +118,11 @@ router.get('/users', async (req, res, next) => {
             }
           }
         },
-        managedShop: true,
+        managedBots: {
+          include: {
+            bot: true
+          }
+        },
         inviteCode: true
       },
       orderBy: { createdAt: 'desc' },
@@ -138,8 +146,8 @@ router.get('/users', async (req, res, next) => {
   }
 });
 
-// Get all shops
-router.get('/shops', async (req, res, next) => {
+// Get all bots
+router.get('/bots', async (req, res, next) => {
   try {
     const { isActive, category, page = '1', limit = '20' } = req.query;
 
@@ -147,7 +155,7 @@ router.get('/shops', async (req, res, next) => {
     if (isActive !== undefined) where.isActive = isActive === 'true';
     if (category) where.category = category;
 
-    const shops = await prisma.shop.findMany({
+    const bots = await prisma.bot.findMany({
       where,
       include: {
         owner: true,
@@ -163,10 +171,10 @@ router.get('/shops', async (req, res, next) => {
       skip: (parseInt(page as string) - 1) * parseInt(limit as string)
     });
 
-    const total = await prisma.shop.count({ where });
+    const total = await prisma.bot.count({ where });
 
     res.json({
-      shops,
+      bots,
       pagination: {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
@@ -207,6 +215,23 @@ router.get('/invite-codes', async (req, res, next) => {
       include: {
         _count: {
           select: { usedByUsers: true }
+        },
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true
+          }
+        },
+        usedByUsers: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            telegramId: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -308,8 +333,12 @@ router.patch('/users/:id/grant-access', async (req, res, next) => {
       where: { id },
       data: { hasFullAccess: true },
       include: {
-        ownedShop: true,
-        managedShop: true
+        ownedBots: true,
+        managedBots: {
+          include: {
+            bot: true
+          }
+        }
       }
     });
 
@@ -344,8 +373,12 @@ router.patch('/users/:id/revoke-access', async (req, res, next) => {
       where: { id },
       data: { hasFullAccess: false },
       include: {
-        ownedShop: true,
-        managedShop: true
+        ownedBots: true,
+        managedBots: {
+          include: {
+            bot: true
+          }
+        }
       }
     });
 
@@ -355,15 +388,14 @@ router.patch('/users/:id/revoke-access', async (req, res, next) => {
   }
 });
 
-// Create shop
-router.post('/shops', async (req, res, next) => {
+// Create bot for owner
+router.post('/bots', async (req, res, next) => {
   try {
-    const data = createShopSchema.parse(req.body);
+    const data = createBotSchema.parse(req.body);
 
     // Проверяем, что владелец существует и является OWNER
     const owner = await prisma.user.findUnique({
-      where: { id: data.ownerId },
-      include: { ownedShop: true }
+      where: { id: data.ownerId }
     });
 
     if (!owner) {
@@ -372,10 +404,6 @@ router.post('/shops', async (req, res, next) => {
 
     if (owner.role !== 'OWNER') {
       throw new AppError(400, 'User must have OWNER role');
-    }
-
-    if (owner.ownedShop) {
-      throw new AppError(400, 'Owner already has a shop');
     }
 
     // Проверяем токен бота
@@ -387,8 +415,22 @@ router.post('/shops', async (req, res, next) => {
       throw new AppError(400, 'Invalid bot token');
     }
 
-    // Создаем магазин
-    const shop = await prisma.shop.create({
+    // Проверяем, не используется ли уже такой бот
+    const existingBot = await prisma.bot.findFirst({
+      where: { 
+        OR: [
+          { botToken: data.botToken },
+          { botUsername: botInfo.username! }
+        ]
+      }
+    });
+
+    if (existingBot) {
+      throw new AppError(400, 'Bot already exists in the system');
+    }
+
+    // Создаем бот
+    const bot = await prisma.bot.create({
       data: {
         name: data.name,
         botToken: data.botToken,
@@ -405,26 +447,26 @@ router.post('/shops', async (req, res, next) => {
     });
 
     // Запускаем бота
-    await createBot(shop.id, shop.botToken);
+    await createBot(bot.id, bot.botToken);
 
-    res.status(201).json(shop);
+    res.status(201).json(bot);
   } catch (error) {
     next(error);
   }
 });
 
-// Update shop
-router.patch('/shops/:id', async (req, res, next) => {
+// Update bot
+router.patch('/bots/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const data = updateShopSchema.parse(req.body);
+    const data = updateBotSchema.parse(req.body);
 
-    const shop = await prisma.shop.findUnique({
+    const bot = await prisma.bot.findUnique({
       where: { id }
     });
 
-    if (!shop) {
-      throw new AppError(404, 'Shop not found');
+    if (!bot) {
+      throw new AppError(404, 'Bot not found');
     }
 
     const updateData: any = {};
@@ -445,11 +487,11 @@ router.patch('/shops/:id', async (req, res, next) => {
       updateData.botUsername = botInfo.username;
 
       // Удаляем старого бота и создаем нового
-      await removeBot(shop.id);
-      await createBot(shop.id, data.botToken);
+      await removeBot(bot.id);
+      await createBot(bot.id, data.botToken);
     }
 
-    const updatedShop = await prisma.shop.update({
+    const updatedBot = await prisma.bot.update({
       where: { id },
       data: updateData,
       include: {
@@ -460,64 +502,64 @@ router.patch('/shops/:id', async (req, res, next) => {
       }
     });
 
-    res.json(updatedShop);
+    res.json(updatedBot);
   } catch (error) {
     next(error);
   }
 });
 
-// Approve shop
-router.patch('/shops/:id/approve', async (req, res, next) => {
+// Approve bot
+router.patch('/bots/:id/approve', async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const shop = await prisma.shop.findUnique({
+    const bot = await prisma.bot.findUnique({
       where: { id }
     });
 
-    if (!shop) {
-      throw new AppError(404, 'Shop not found');
+    if (!bot) {
+      throw new AppError(404, 'Bot not found');
     }
 
-    if (shop.isApproved) {
-      throw new AppError(400, 'Shop already approved');
+    if (bot.isApproved) {
+      throw new AppError(400, 'Bot already approved');
     }
 
-    const updatedShop = await prisma.shop.update({
+    const updatedBot = await prisma.bot.update({
       where: { id },
       data: { isApproved: true }
     });
 
-    res.json(updatedShop);
+    res.json(updatedBot);
   } catch (error) {
     next(error);
   }
 });
 
-// Toggle shop status
-router.patch('/shops/:id/status', async (req, res, next) => {
+// Toggle bot status
+router.patch('/bots/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body;
 
-    const shop = await prisma.shop.findUnique({
+    const bot = await prisma.bot.findUnique({
       where: { id }
     });
 
-    if (!shop) {
-      throw new AppError(404, 'Shop not found');
+    if (!bot) {
+      throw new AppError(404, 'Bot not found');
     }
 
     // Если деактивируем - останавливаем бота
-    if (!isActive && shop.isActive) {
-      await removeBot(shop.id);
+    if (!isActive && bot.isActive) {
+      await removeBot(bot.id);
     }
     // Если активируем - запускаем бота
-    else if (isActive && !shop.isActive) {
-      await createBot(shop.id, shop.botToken);
+    else if (isActive && !bot.isActive) {
+      await createBot(bot.id, bot.botToken);
     }
 
-    const updatedShop = await prisma.shop.update({
+    const updatedBot = await prisma.bot.update({
       where: { id },
       data: { isActive },
       include: {
@@ -528,18 +570,18 @@ router.patch('/shops/:id/status', async (req, res, next) => {
       }
     });
 
-    res.json(updatedShop);
+    res.json(updatedBot);
   } catch (error) {
     next(error);
   }
 });
 
-// Delete shop
-router.delete('/shops/:id', async (req, res, next) => {
+// Delete bot
+router.delete('/bots/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const shop = await prisma.shop.findUnique({
+    const bot = await prisma.bot.findUnique({
       where: { id },
       include: {
         _count: {
@@ -548,23 +590,23 @@ router.delete('/shops/:id', async (req, res, next) => {
       }
     });
 
-    if (!shop) {
-      throw new AppError(404, 'Shop not found');
+    if (!bot) {
+      throw new AppError(404, 'Bot not found');
     }
 
-    if (shop._count.dialogs > 0) {
-      throw new AppError(400, 'Cannot delete shop with existing dialogs');
+    if (bot._count.dialogs > 0) {
+      throw new AppError(400, 'Cannot delete bot with existing dialogs');
     }
 
     // Останавливаем бота
-    await removeBot(shop.id);
+    await removeBot(bot.id);
 
-    // Удаляем магазин
-    await prisma.shop.delete({
+    // Удаляем бот
+    await prisma.bot.delete({
       where: { id }
     });
 
-    res.json({ message: 'Shop deleted successfully' });
+    res.json({ message: 'Bot deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -575,123 +617,27 @@ router.get('/stats', async (req, res, next) => {
   try {
     const [
       totalUsers,
-      totalShops,
+      totalBots,
       totalDialogs,
       totalMessages,
-      activeShops,
-      unapprovedShops
+      activeBots,
+      unapprovedBots
     ] = await Promise.all([
       prisma.user.count(),
-      prisma.shop.count(),
+      prisma.bot.count(),
       prisma.dialog.count(),
       prisma.message.count(),
-      prisma.shop.count({ where: { isActive: true } }),
-      prisma.shop.count({ where: { isApproved: false } })
+      prisma.bot.count({ where: { isActive: true } }),
+      prisma.bot.count({ where: { isApproved: false } })
     ]);
 
     res.json({
       totalUsers,
-      totalShops,
+      totalBots,
       totalDialogs,
       totalMessages,
-      activeShops,
-      unapprovedShops
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get all invite codes
-router.get('/invite-codes', async (req, res, next) => {
-  try {
-    const inviteCodes = await prisma.inviteCode.findMany({
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            username: true
-          }
-        },
-        shop: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        usedByUsers: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            username: true,
-            telegramId: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json({
-      success: true,
-      inviteCodes: inviteCodes.map(code => ({
-        ...code,
-        usedBy: code.usedByUsers
-      }))
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Create invite code
-router.post('/invite-codes', async (req, res, next) => {
-  try {
-    const { role, type, maxUses, expiresInDays, comment } = req.body;
-    
-    // Validation
-    if (!['OWNER', 'MANAGER'].includes(role)) {
-      throw new AppError(400, 'Invalid role');
-    }
-    
-    if (!['SINGLE', 'MULTI'].includes(type)) {
-      throw new AppError(400, 'Invalid type');
-    }
-    
-    const code = generateInviteCode();
-    const expiresAt = expiresInDays 
-      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-      : null;
-    
-    const inviteCode = await prisma.inviteCode.create({
-      data: {
-        code,
-        type,
-        role,
-        maxUses: type === 'SINGLE' ? 1 : maxUses || 10,
-        expiresAt,
-        comment,
-        createdById: req.user!.id,
-        isActive: true,
-        usedCount: 0
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            username: true
-          }
-        }
-      }
-    });
-    
-    res.json({
-      success: true,
-      inviteCode
+      activeBots,
+      unapprovedBots
     });
   } catch (error) {
     next(error);

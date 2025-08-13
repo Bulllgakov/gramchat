@@ -103,13 +103,13 @@ function AppRoutes() {
 
       <Route 
 
-        path="/create-shop" 
+        path="/create-bot" 
 
         element={
 
           <PrivateRoute>
 
-            <DashboardPage showCreateShopForm={true} />
+            <DashboardPage showCreateBotForm={true} />
 
           </PrivateRoute>
 

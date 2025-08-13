@@ -1,13 +1,13 @@
 // ВАЖНО: Всегда используем поддомены для API, НЕ используем префикс /api
-// В локальной разработке: http://localhost:3000
+// В локальной разработке: http://api.localhost:3000
 // В production: https://api.gramchat.ru
 
 const getBaseApiUrl = () => {
   const hostname = window.location.hostname;
   
-  // Локальная разработка - используем прямой порт без префикса /api
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3000';
+  // Локальная разработка - используем поддомен api.localhost
+  if (hostname === 'web.localhost' || hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://api.localhost:3000';
   }
   
   // Production - используем поддомен api.gramchat.ru
@@ -18,8 +18,8 @@ const getWebSocketUrl = () => {
   const hostname = window.location.hostname;
   
   // Локальная разработка
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3000';
+  if (hostname === 'web.localhost' || hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://api.localhost:3000';
   }
   
   // Production

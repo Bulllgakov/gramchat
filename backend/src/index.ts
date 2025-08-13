@@ -76,9 +76,16 @@ import express, { Express, Request, Response } from 'express';
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
 
+    socket.on('join-bot', (botId: string) => {
+      socket.join(`bot-${botId}`);
+      console.log(`Socket ${socket.id} joined bot-${botId}`);
+    });
+    
+    // Legacy support for old clients
     socket.on('join-shop', (shopId: string) => {
-      socket.join(`shop-${shopId}`);
-      console.log(`Socket ${socket.id} joined shop-${shopId}`);
+      // Redirect to bot room for backward compatibility
+      socket.join(`bot-${shopId}`);
+      console.log(`Socket ${socket.id} joined bot-${shopId} (legacy shop event)`);
     });
 
     socket.on('disconnect', () => {
