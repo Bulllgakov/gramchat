@@ -20,9 +20,10 @@ const globalAvatarCache = new Map<string, string>();
 interface DialogsListStyledProps {
   onSelectDialog: (dialog: Dialog) => void;
   selectedDialogId?: string;
+  botId?: string;
 }
 
-export function DialogsListStyled({ onSelectDialog, selectedDialogId }: DialogsListStyledProps) {
+export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId }: DialogsListStyledProps) {
   const { user } = useAuth();
   const [dialogs, setDialogs] = useState<Dialog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,14 +39,24 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId }: DialogsL
   const [filter, setFilter] = useState<'all' | 'my' | 'unassigned'>(getInitialFilter());
 
   useEffect(() => {
-    fetchDialogs();
-    // const interval = setInterval(fetchDialogs, 10000); // Отключено для разработки
-    // return () => clearInterval(interval);
-  }, [filter]);
+    // Только загружаем диалоги если есть botId
+    if (botId) {
+      fetchDialogs();
+      // const interval = setInterval(fetchDialogs, 10000); // Отключено для разработки
+      // return () => clearInterval(interval);
+    }
+  }, [filter, botId]);
 
   const fetchDialogs = async () => {
+    // Не делаем запрос без botId
+    if (!botId) {
+      setDialogs([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await apiService.get<{ dialogs: Dialog[] }>(`/dialogs?filter=${filter}`);
+      const data = await apiService.get<{ dialogs: Dialog[] }>(`/dialogs?filter=${filter}&botId=${botId}`);
       console.log('Dialogs fetched:', data);
       console.log('First dialog customerPhotoUrl:', data.dialogs?.[0]?.customerPhotoUrl);
       setDialogs(data.dialogs || []);
@@ -175,6 +186,26 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId }: DialogsL
     (dialog.customerUsername && dialog.customerUsername.toLowerCase().includes(searchValue.toLowerCase()))
   );
 
+  // Если нет botId, показываем сообщение
+  if (!botId) {
+    return (
+      <Sidebar position="left" scrollable={false}>
+        <div style={{ 
+          height: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <div style={{ color: '#999', fontSize: '14px' }}>
+            <p style={{ margin: '0 0 8px 0' }}>Нет подключенных ботов</p>
+            <p style={{ margin: 0, fontSize: '12px' }}>Подключите бота для просмотра диалогов</p>
+          </div>
+        </div>
+      </Sidebar>
+    );
+  }
 
   return (
     <Sidebar position="left" scrollable={false}>

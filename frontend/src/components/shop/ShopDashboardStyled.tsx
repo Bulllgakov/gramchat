@@ -21,10 +21,19 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showManagersPanel, setShowManagersPanel] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [bots, setBots] = useState<any[]>([]);
+  const [selectedBot, setSelectedBot] = useState<any | null>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   
+  // Загружаем боты если нет объекта shop
+  useEffect(() => {
+    if (!shop && userRole === 'OWNER') {
+      loadBots();
+    }
+  }, []);
+
   // Закрываем меню при клике вне его
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,6 +47,26 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const loadBots = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.gramchat.ru'}/bots/my-bots`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBots(data);
+        if (data.length > 0 && !selectedBot) {
+          setSelectedBot(data[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading bots:', error);
+    }
+  };
   
   const handleLogout = () => {
     logout();
@@ -178,6 +207,7 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
             <DialogsListStyled 
               onSelectDialog={setSelectedDialog}
               selectedDialogId={selectedDialog?.id}
+              botId={shop ? shop.id : selectedBot?.id}
             />
           </ErrorBoundary>
         </div>
