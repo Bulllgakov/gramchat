@@ -449,14 +449,23 @@ router.get('/me', authenticate, async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: {
-        ownedShop: true,
-        managedShop: true
+        ownedBots: true,
+        managedBots: {
+          include: {
+            bot: true
+          }
+        }
       }
     });
 
     if (!user) {
       throw new AppError(404, 'User not found');
     }
+
+    // Get first bot for backward compatibility
+    const firstOwnedBot = user.ownedBots?.[0];
+    const firstManagedBot = user.managedBots?.[0]?.bot;
+    const primaryBot = firstOwnedBot || firstManagedBot;
 
     res.json({
       id: user.id,
@@ -466,9 +475,12 @@ router.get('/me', authenticate, async (req, res, next) => {
       username: user.username,
       role: user.role,
       hasFullAccess: user.hasFullAccess,
-      shop: user.ownedShop || user.managedShop,
-      hasApprovedShop: user.ownedShop?.isApproved ?? false,
-      needsShopCreation: user.role === 'OWNER' && !user.ownedShop
+      shop: primaryBot, // For backward compatibility
+      hasApprovedShop: firstOwnedBot?.isApproved ?? false,
+      needsShopCreation: user.role === 'OWNER' && user.ownedBots.length === 0,
+      // New fields for bot support
+      ownedBots: user.ownedBots,
+      managedBots: user.managedBots.map(mb => mb.bot)
     });
   } catch (error) {
     next(error);
