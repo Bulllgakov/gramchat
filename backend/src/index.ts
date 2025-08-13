@@ -10,7 +10,8 @@ import express, { Express, Request, Response } from 'express';
 
   // Import routes
   import authRoutes from './routes/auth.routes';
-  import shopRoutes from './routes/shop.routes';
+  import botRoutes from './routes/bot.routes';
+  import botManagerRoutes from './routes/bot-manager.routes';
   import dialogRoutes from './routes/dialog.routes';
   import adminRoutes from './routes/admin.routes';
   import ownerRoutes from './routes/owner.routes';
@@ -61,7 +62,8 @@ import express, { Express, Request, Response } from 'express';
 
   // API Routes
   app.use('/auth', authRoutes);
-  app.use('/shops', shopRoutes);
+  app.use('/bots', botRoutes);
+  app.use('/bot-manager', botManagerRoutes);
   app.use('/dialogs', dialogRoutes);
   app.use('/admin', adminRoutes);
   app.use('/owner', ownerRoutes);
