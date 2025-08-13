@@ -23,6 +23,7 @@ export function ShopDashboard({ shop }: ShopDashboardProps) {
         {/* Список диалогов */}
         <div className="w-1/3 border-r">
           <DialogsList 
+            botId={shop.botId}
             onSelectDialog={setSelectedDialog}
             selectedDialogId={selectedDialog?.id}
           />
@@ -32,6 +33,7 @@ export function ShopDashboard({ shop }: ShopDashboardProps) {
         <div className="flex-1">
           <ChatWindow 
             dialog={selectedDialog}
+            botId={shop.botId}
             onClose={() => setSelectedDialog(null)}
           />
         </div>

@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AuthPage } from './pages/AuthPage';
-import { ShopDashboardStyled } from './components/shop/ShopDashboardStyled';
+import { ShopDashboard } from './components/shop/ShopDashboard';
 import { AdminPanel } from './components/admin/AdminPanel';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { TestPage } from './pages/TestPage';
@@ -46,14 +46,71 @@ function PrivateRoute({ children }: { children: React.ReactElement }) {
 
 function MainPage() {
   const { user } = useAuth();
+  const [shop, setShop] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+  
+  React.useEffect(() => {
+    // Загружаем данные о магазине/боте
+    const loadShopData = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        // Пробуем загрузить первый бот пользователя
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.gramchat.ru'}/bots/my-bots`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const bots = await response.json();
+          if (bots.length > 0) {
+            // Используем первый бот как "shop" для совместимости
+            setShop({
+              id: bots[0].id,
+              name: bots[0].name || 'Мой бот',
+              botUsername: bots[0].username,
+              botId: bots[0].id,
+              category: bots[0].category || 'Общее'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading shop data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user?.role !== 'ADMIN') {
+      loadShopData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
   
   // Для админов показываем админ панель
   if (user?.role === 'ADMIN') {
     return <AdminPanel />;
   }
   
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Загрузка...</div>
+      </div>
+    );
+  }
+  
+  // Если нет магазина, создаем заглушку
+  const shopData = shop || {
+    name: 'Диалоги',
+    botUsername: 'не подключен',
+    category: 'Общее',
+    botId: null
+  };
+  
   // Для владельцев и менеджеров показываем страницу диалогов
-  return <ShopDashboardStyled userRole={user?.role} />;
+  return <ShopDashboard shop={shopData} />;
 }
 
 function AppRoutes() {
