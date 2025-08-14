@@ -47,11 +47,11 @@ router.get('/', authenticate, async (req, res, next) => {
     if (userRole === 'MANAGER') {
       whereCondition.assignedToId = userId;
     } else if (userRole === 'OWNER') {
-      const shop = await prisma.shop.findUnique({
+      const bots = await prisma.bot.findMany({
         where: { ownerId: userId }
       });
-      if (!shop) throw new AppError(404, 'Shop not found');
-      whereCondition.shopId = shop.id;
+      if (!bots || bots.length === 0) throw new AppError(404, 'Bots not found');
+      whereCondition.botId = { in: bots.map(bot => bot.id) };
     }
     
     // Получаем статистику по диалогам
@@ -198,15 +198,19 @@ router.get('/managers', authenticate, async (req, res, next) => {
     
     const period = periodSchema.parse(req.query.period || 'week');
     
-    // Получаем магазин владельца
-    const shop = await prisma.shop.findUnique({
+    // Получаем боты владельца
+    const bots = await prisma.bot.findMany({
       where: { ownerId: req.user!.id },
       include: {
-        managers: true
+        managers: {
+          include: {
+            user: true
+          }
+        }
       }
     });
     
-    if (!shop) throw new AppError(404, 'Shop not found');
+    if (!bots || bots.length === 0) throw new AppError(404, 'Bots not found');
     
     // Определяем временной диапазон
     const now = new Date();
@@ -225,11 +229,17 @@ router.get('/managers', authenticate, async (req, res, next) => {
         break;
     }
     
+    // Собираем всех уникальных менеджеров
+    const allManagers = bots.flatMap(bot => bot.managers.map(manager => manager.user));
+    const uniqueManagers = allManagers.filter((manager, index, array) => 
+      array.findIndex(m => m.id === manager.id) === index
+    );
+    
     // Собираем статистику по каждому менеджеру
     const managersAnalytics = await Promise.all(
-      shop.managers.map(async (manager) => {
+      uniqueManagers.map(async (manager) => {
         const whereCondition = {
-          shopId: shop.id,
+          botId: { in: bots.map(bot => bot.id) },
           assignedToId: manager.id,
           createdAt: { gte: startDate }
         };

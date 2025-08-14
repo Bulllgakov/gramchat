@@ -1,12 +1,13 @@
-import { User, Shop } from '@prisma/client';
+import { User, Bot } from '@prisma/client';
 
 declare global {
   namespace Express {
     interface Request {
       user?: User & {
-        shop?: Shop;
+        bot?: Bot;
       };
-      shop?: Shop;
+      bot?: Bot;
+      bots?: Bot[];
     }
   }
 }

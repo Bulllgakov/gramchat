@@ -18,25 +18,27 @@ export const errorHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       error: err.message,
       status: 'error'
     });
+    return;
   }
 
   if (err instanceof ZodError) {
-    return res.status(400).json({
+    res.status(400).json({
       error: 'Validation error',
       details: err.errors,
       status: 'error'
     });
+    return;
   }
 
   logger.error('Unhandled error:', err);
 
-  return res.status(500).json({
+  res.status(500).json({
     error: 'Internal server error',
     status: 'error'
   });

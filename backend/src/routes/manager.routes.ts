@@ -17,7 +17,7 @@ const createManagerSchema = z.object({
 // Password reset schemas no longer needed - invite codes only
 
 // Создание инвайт-кода для менеджера (только для OWNER с полным доступом)
-router.post('/create', authenticate, authorize('OWNER'), requireFullAccess, async (req, res, next) => {
+router.post('/create', authenticate, authorize('OWNER'), requireFullAccess, async (req: any, res: any, next: any) => {
   try {
     const validation = createManagerSchema.safeParse(req.body);
     if (!validation.success) {
@@ -30,15 +30,15 @@ router.post('/create', authenticate, authorize('OWNER'), requireFullAccess, asyn
     const { firstName, lastName, comment } = validation.data;
     const currentUser = req.user!;
 
-    // Проверяем, что у владельца есть магазин
+    // Проверяем, что у владельца есть боты
     const owner = await prisma.user.findUnique({
       where: { id: currentUser.id },
-      include: { ownedShop: true }
+      include: { ownedBots: true }
     });
 
-    if (!owner?.ownedShop) {
+    if (!owner?.ownedBots || owner.ownedBots.length === 0) {
       return res.status(403).json({ 
-        error: 'У вас нет магазина для добавления менеджеров' 
+        error: 'У вас нет ботов для добавления менеджеров' 
       });
     }
 
@@ -53,17 +53,17 @@ router.post('/create', authenticate, authorize('OWNER'), requireFullAccess, asyn
         usedCount: 0,
         isActive: true,
         createdById: currentUser.id,
-        shopId: owner.ownedShop.id,
+        botId: owner.ownedBots[0].id, // Берем первый бот владельца
         comment: comment || `Инвайт для менеджера ${firstName} ${lastName || ''}`.trim()
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       inviteCode: {
         code: inviteCode.code,
         comment: inviteCode.comment,
-        shopName: owner.ownedShop.name,
+        botName: owner.ownedBots[0].name,
         message: `Инвайт-код создан. Передайте код ${inviteCode.code} менеджеру для авторизации через Telegram`
       }
     });
@@ -73,7 +73,7 @@ router.post('/create', authenticate, authorize('OWNER'), requireFullAccess, asyn
 });
 
 // Создание нового инвайт-кода для менеджера (замена сброса пароля)
-router.post('/reset-access', authenticate, authorize('OWNER'), requireFullAccess, async (req, res, next) => {
+router.post('/reset-access', authenticate, authorize('OWNER'), requireFullAccess, async (req: any, res: any, next: any) => {
   try {
     const resetSchema = z.object({
       userId: z.string().uuid('Некорректный ID пользователя'),
@@ -95,28 +95,32 @@ router.post('/reset-access', authenticate, authorize('OWNER'), requireFullAccess
     const owner = await prisma.user.findUnique({
       where: { id: currentUser.id },
       include: { 
-        ownedShop: {
+        ownedBots: {
           include: {
             managers: {
-              where: { id: userId }
+              include: {
+                user: true
+              },
+              where: { userId: userId }
             }
           }
         }
       }
     });
 
-    if (!owner?.ownedShop || owner.ownedShop.managers.length === 0) {
+    const botWithManager = owner?.ownedBots?.find(bot => bot.managers.length > 0);
+    if (!botWithManager) {
       return res.status(403).json({ 
         error: 'У вас нет прав для управления этим пользователем' 
       });
     }
 
-    const manager = owner.ownedShop.managers[0];
+    const manager = botWithManager.managers[0].user;
 
     // Деактивируем старые инвайт-коды этого менеджера
     await prisma.inviteCode.updateMany({
       where: {
-        shopId: owner.ownedShop.id,
+        botId: botWithManager.id,
         role: 'MANAGER',
         usedByUsers: {
           some: {
@@ -140,12 +144,12 @@ router.post('/reset-access', authenticate, authorize('OWNER'), requireFullAccess
         usedCount: 0,
         isActive: true,
         createdById: currentUser.id,
-        shopId: owner.ownedShop.id,
+        botId: botWithManager.id,
         comment: comment || `Новый инвайт для ${manager.firstName} ${manager.lastName || ''}`.trim()
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       inviteCode: {
         code: inviteCode.code,
@@ -159,26 +163,30 @@ router.post('/reset-access', authenticate, authorize('OWNER'), requireFullAccess
 });
 
 // Получение списка менеджеров магазина (для OWNER)
-router.get('/list', authenticate, authorize('OWNER'), async (req, res, next) => {
+router.get('/list', authenticate, authorize('OWNER'), async (req: any, res: any, next: any) => {
   try {
     const currentUser = req.user!;
 
     const owner = await prisma.user.findUnique({
       where: { id: currentUser.id },
       include: {
-        ownedShop: {
+        ownedBots: {
           include: {
             managers: {
-              select: {
-                id: true,
-                telegramId: true,
-                firstName: true,
-                lastName: true,
-                username: true,
-                role: true,
-                isActive: true,
-                createdAt: true,
-                hasFullAccess: true
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    telegramId: true,
+                    firstName: true,
+                    lastName: true,
+                    username: true,
+                    role: true,
+                    isActive: true,
+                    createdAt: true,
+                    hasFullAccess: true
+                  }
+                }
               }
             }
           }
@@ -186,15 +194,25 @@ router.get('/list', authenticate, authorize('OWNER'), async (req, res, next) => 
       }
     });
 
-    if (!owner?.ownedShop) {
+    if (!owner?.ownedBots || owner.ownedBots.length === 0) {
       return res.status(403).json({ 
-        error: 'У вас нет магазина' 
+        error: 'У вас нет ботов' 
       });
     }
 
-    res.json({
+    // Собираем всех менеджеров из всех ботов владельца
+    const allManagers = owner.ownedBots.flatMap(bot => 
+      bot.managers.map(manager => manager.user)
+    );
+    
+    // Убираем дубликаты по ID (если менеджер работает с несколькими ботами)
+    const uniqueManagers = allManagers.filter((manager, index, array) => 
+      array.findIndex(m => m.id === manager.id) === index
+    );
+
+    return res.json({
       success: true,
-      managers: owner.ownedShop.managers
+      managers: uniqueManagers
     });
   } catch (error) {
     next(error);
@@ -202,7 +220,7 @@ router.get('/list', authenticate, authorize('OWNER'), async (req, res, next) => 
 });
 
 // Удаление менеджера из магазина (для OWNER)
-router.delete('/:managerId', authenticate, authorize('OWNER'), async (req, res, next) => {
+router.delete('/:managerId', authenticate, authorize('OWNER'), async (req: any, res: any, next: any) => {
   try {
     const { managerId } = req.params;
     const currentUser = req.user!;
@@ -211,34 +229,51 @@ router.delete('/:managerId', authenticate, authorize('OWNER'), async (req, res, 
     const owner = await prisma.user.findUnique({
       where: { id: currentUser.id },
       include: {
-        ownedShop: {
+        ownedBots: {
           include: {
             managers: {
-              where: { id: managerId }
+              include: {
+                user: true
+              },
+              where: { userId: managerId }
             }
           }
         }
       }
     });
 
-    if (!owner?.ownedShop || owner.ownedShop.managers.length === 0) {
+    const botWithManager = owner?.ownedBots?.find(bot => bot.managers.length > 0);
+    if (!botWithManager) {
       return res.status(403).json({ 
         error: 'У вас нет прав для удаления этого менеджера' 
       });
     }
 
-    // Удаляем связь менеджера с магазином
-    await prisma.user.update({
-      where: { id: managerId },
-      data: {
-        managedShopId: null,
-        isActive: false
+    // Удаляем связи менеджера со всеми ботами владельца
+    await prisma.botManager.deleteMany({
+      where: {
+        userId: managerId,
+        botId: {
+          in: owner!.ownedBots!.map(bot => bot.id)
+        }
       }
     });
+    
+    // Деактивируем менеджера, если он больше не управляет никакими ботами
+    const remainingBotConnections = await prisma.botManager.count({
+      where: { userId: managerId }
+    });
+    
+    if (remainingBotConnections === 0) {
+      await prisma.user.update({
+        where: { id: managerId },
+        data: { isActive: false }
+      });
+    }
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Менеджер успешно удален из магазина'
+      message: 'Менеджер успешно удален из ботов'
     });
   } catch (error) {
     next(error);

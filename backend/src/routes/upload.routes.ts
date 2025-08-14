@@ -28,7 +28,7 @@ router.post('/dialog/:dialogId',
       // Проверяем доступ к диалогу
       const dialog = await prisma.dialog.findUnique({
         where: { id: dialogId },
-        include: { shop: true }
+        include: { bot: true }
       });
 
       if (!dialog) {
@@ -37,19 +37,26 @@ router.post('/dialog/:dialogId',
 
       const user = await prisma.user.findUnique({
         where: { id: req.user!.id },
-        include: { ownedShop: true, managedShop: true }
+        include: { 
+          ownedBots: true, 
+          managedBots: {
+            include: {
+              bot: true
+            }
+          }
+        }
       });
 
       const hasAccess = 
-        dialog.shop.ownerId === req.user!.id ||
-        user?.managedShop?.id === dialog.shopId;
+        dialog.bot.ownerId === req.user!.id ||
+        user?.managedBots?.some(botManager => botManager.botId === dialog.botId);
 
       if (!hasAccess) {
         throw new AppError(403, 'Нет доступа к диалогу');
       }
 
       // Получаем бота
-      const bot = getBot(dialog.shopId);
+      const bot = getBot(dialog.botId);
       if (!bot) {
         throw new AppError(500, 'Бот недоступен');
       }
@@ -141,7 +148,7 @@ router.get('/message/:messageId', authenticate, async (req, res, next) => {
       where: { id: messageId },
       include: {
         dialog: {
-          include: { shop: true }
+          include: { bot: true }
         }
       }
     });
@@ -153,12 +160,19 @@ router.get('/message/:messageId', authenticate, async (req, res, next) => {
     // Проверяем доступ
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      include: { ownedShop: true, managedShop: true }
+      include: { 
+        ownedBots: true, 
+        managedBots: {
+          include: {
+            bot: true
+          }
+        }
+      }
     });
 
     const hasAccess = 
-      message.dialog.shop.ownerId === req.user!.id ||
-      user?.managedShop?.id === message.dialog.shopId;
+      message.dialog.bot.ownerId === req.user!.id ||
+      user?.managedBots?.some(botManager => botManager.botId === message.dialog.botId);
 
     if (!hasAccess) {
       throw new AppError(403, 'Нет доступа к файлу');
@@ -170,7 +184,7 @@ router.get('/message/:messageId', authenticate, async (req, res, next) => {
     }
 
     // Получаем файл из Telegram
-    const bot = getBot(message.dialog.shopId);
+    const bot = getBot(message.dialog.botId);
     if (!bot) {
       throw new AppError(500, 'Бот недоступен');
     }

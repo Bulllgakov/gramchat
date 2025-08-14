@@ -14,43 +14,44 @@ const createInviteSchema = z.object({
   expiresInDays: z.number().min(1).max(365).optional()
 });
 
-const createShopSchema = z.object({
+const createBotSchema = z.object({
   name: z.string().min(1),
   botToken: z.string().min(1),
   botUsername: z.string().min(1),
   category: z.string().min(1)
 });
 
-// Middleware для проверки, что у владельца есть магазин
-const requireShop = async (req: any, res: any, next: any) => {
-  const shop = await prisma.shop.findUnique({
+// Middleware для проверки, что у владельца есть боты
+const requireBot = async (req: any, res: any, next: any) => {
+  const bots = await prisma.bot.findMany({
     where: { ownerId: req.user!.id }
   });
   
-  if (!shop) {
-    return next(new AppError(403, 'У вас нет магазина'));
+  if (!bots || bots.length === 0) {
+    return next(new AppError(403, 'У вас нет ботов'));
   }
   
-  req.shop = shop;
+  req.bots = bots;
+  req.bot = bots[0]; // Первый бот как основной
   next();
 };
 
-// Создание магазина (доступно без requireShop)
-router.post('/shop', authenticate, authorize('OWNER'), createResourceLimiter, async (req, res, next) => {
+// Создание бота (доступно без requireBot)
+router.post('/bot', authenticate, authorize('OWNER'), createResourceLimiter, async (req, res, next) => {
   try {
-    const data = createShopSchema.parse(req.body);
+    const data = createBotSchema.parse(req.body);
     
-    // Проверяем, нет ли уже магазина у пользователя
-    const existingShop = await prisma.shop.findUnique({
+    // Проверяем лимит ботов у пользователя (максимум 3 бота)
+    const existingBotsCount = await prisma.bot.count({
       where: { ownerId: req.user!.id }
     });
     
-    if (existingShop) {
-      throw new AppError(400, 'У вас уже есть магазин');
+    if (existingBotsCount >= 3) {
+      throw new AppError(400, 'У вас уже максимальное количество ботов (3)');
     }
     
     // Проверяем уникальность токена и username бота
-    const botTokenExists = await prisma.shop.findUnique({
+    const botTokenExists = await prisma.bot.findUnique({
       where: { botToken: data.botToken }
     });
     
@@ -58,7 +59,7 @@ router.post('/shop', authenticate, authorize('OWNER'), createResourceLimiter, as
       throw new AppError(400, 'Этот токен бота уже используется');
     }
     
-    const botUsernameExists = await prisma.shop.findUnique({
+    const botUsernameExists = await prisma.bot.findUnique({
       where: { botUsername: data.botUsername }
     });
     
@@ -72,11 +73,11 @@ router.post('/shop', authenticate, authorize('OWNER'), createResourceLimiter, as
       include: { inviteCode: true }
     });
     
-    // Если регистрация была по инвайт-коду - магазин сразу одобрен
+    // Если регистрация была по инвайт-коду - бот сразу одобрен
     const isApproved = !!user?.inviteCode;
     
-    // Создаем магазин
-    const shop = await prisma.shop.create({
+    // Создаем бот
+    const bot = await prisma.bot.create({
       data: {
         ...data,
         ownerId: req.user!.id,
@@ -85,33 +86,33 @@ router.post('/shop', authenticate, authorize('OWNER'), createResourceLimiter, as
     });
     
     res.status(201).json({
-      shop,
+      bot,
       message: isApproved 
-        ? 'Магазин создан и готов к работе' 
-        : 'Магазин создан. Ожидайте одобрения администратора для доступа к полному функционалу'
+        ? 'Бот создан и готов к работе' 
+        : 'Бот создан. Ожидайте одобрения администратора для доступа к полному функционалу'
     });
   } catch (error) {
     next(error);
   }
 });
 
-// Middleware для проверки одобрения магазина
-const requireApprovedShop = async (req: any, res: any, next: any) => {
-  if (!req.shop!.isApproved) {
-    return next(new AppError(403, 'Ваш магазин ожидает одобрения администратора. Эта функция будет доступна после одобрения'));
+// Middleware для проверки одобрения бота
+const requireApprovedBot = async (req: any, res: any, next: any) => {
+  if (!req.bot!.isApproved) {
+    return next(new AppError(403, 'Ваш бот ожидает одобрения администратора. Эта функция будет доступна после одобрения'));
   }
   next();
 };
 
-// Все остальные роуты требуют роль OWNER и наличие магазина
-router.use(authenticate, authorize('OWNER'), requireShop);
+// Все остальные роуты требуют роль OWNER и наличие ботов
+router.use(authenticate, authorize('OWNER'), requireBot);
 
 // Получить список инвайт-кодов
 router.get('/invite-codes', async (req, res, next) => {
   try {
     const codes = await prisma.inviteCode.findMany({
       where: { 
-        shopId: req.shop!.id,
+        botId: { in: req.bots!.map((bot: any) => bot.id) },
         createdById: req.user!.id
       },
       include: {
@@ -134,8 +135,8 @@ router.get('/invite-codes', async (req, res, next) => {
   }
 });
 
-// Создать инвайт-код для менеджера (требует одобренный магазин)
-router.post('/invite-codes', requireApprovedShop, createResourceLimiter, async (req, res, next) => {
+// Создать инвайт-код для менеджера (требует одобренный бот)
+router.post('/invite-codes', requireApprovedBot, createResourceLimiter, async (req, res, next) => {
   try {
     const data = createInviteSchema.parse(req.body);
     
@@ -152,7 +153,7 @@ router.post('/invite-codes', requireApprovedShop, createResourceLimiter, async (
         expiresAt,
         comment: data.comment,
         createdById: req.user!.id,
-        shopId: req.shop!.id
+        botId: req.bot!.id
       }
     });
 
@@ -171,7 +172,7 @@ router.patch('/invite-codes/:id/deactivate', async (req, res, next) => {
       where: {
         id,
         createdById: req.user!.id,
-        shopId: req.shop!.id
+        botId: { in: req.bots!.map((bot: any) => bot.id) }
       }
     });
 
@@ -190,66 +191,99 @@ router.patch('/invite-codes/:id/deactivate', async (req, res, next) => {
   }
 });
 
-// Получить список менеджеров магазина
+// Получить список менеджеров ботов
 router.get('/managers', async (req, res, next) => {
   try {
-    const managers = await prisma.user.findMany({
+    const managers = await prisma.botManager.findMany({
       where: {
-        managedShopId: req.shop!.id,
-        role: 'MANAGER'
+        botId: { in: req.bots!.map((bot: any) => bot.id) }
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        username: true,
-        email: true,
-        isActive: true,
-        createdAt: true,
-        requirePasswordChange: true,
-        inviteCode: {
+      include: {
+        user: {
           select: {
-            code: true,
-            comment: true
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            isActive: true,
+            createdAt: true,
+            inviteCode: {
+              select: {
+                code: true,
+                comment: true
+              }
+            }
+          }
+        },
+        bot: {
+          select: {
+            id: true,
+            name: true
           }
         }
-      },
-      orderBy: { createdAt: 'desc' }
+      }
     });
+    
+    // Преобразуем данные для фронтенда
+    const managersData = managers.map(botManager => ({
+      id: botManager.user.id,
+      firstName: botManager.user.firstName,
+      lastName: botManager.user.lastName,
+      username: botManager.user.username,
+      isActive: botManager.user.isActive,
+      createdAt: botManager.user.createdAt,
+      inviteCode: botManager.user.inviteCode,
+      bot: botManager.bot,
+      assignedAt: botManager.assignedAt
+    }));
 
-    res.json({ managers });
+    res.json({ managers: managersData });
   } catch (error) {
     next(error);
   }
 });
 
-// Удалить менеджера из магазина
+// Удалить менеджера из ботов
 router.delete('/managers/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    const manager = await prisma.user.findFirst({
+    const botManager = await prisma.botManager.findFirst({
       where: {
-        id,
-        managedShopId: req.shop!.id,
-        role: 'MANAGER'
+        userId: id,
+        botId: { in: req.bots!.map((bot: any) => bot.id) }
+      },
+      include: {
+        user: true
       }
     });
 
-    if (!manager) {
+    if (!botManager) {
       throw new AppError(404, 'Менеджер не найден');
     }
 
-    // Убираем менеджера из магазина
-    await prisma.user.update({
-      where: { id },
-      data: { 
-        managedShopId: null,
-        isActive: false 
+    // Удаляем связь менеджера с ботами
+    await prisma.botManager.deleteMany({
+      where: {
+        userId: id,
+        botId: { in: req.bots!.map((bot: any) => bot.id) }
       }
     });
+    
+    // Проверяем, остались ли у менеджера связи с другими ботами
+    const remainingConnections = await prisma.botManager.count({
+      where: { userId: id }
+    });
+    
+    // Если нет других связей, деактивируем пользователя
+    if (remainingConnections === 0) {
+      await prisma.user.update({
+        where: { id },
+        data: { isActive: false }
+      });
+    }
 
-    res.json({ message: 'Менеджер удален из магазина' });
+    res.json({ message: 'Менеджер удален из ботов' });
   } catch (error) {
     next(error);
   }
@@ -260,21 +294,23 @@ router.patch('/managers/:id/toggle', async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    const manager = await prisma.user.findFirst({
+    const botManager = await prisma.botManager.findFirst({
       where: {
-        id,
-        managedShopId: req.shop!.id,
-        role: 'MANAGER'
+        userId: id,
+        botId: { in: req.bots!.map((bot: any) => bot.id) }
+      },
+      include: {
+        user: true
       }
     });
 
-    if (!manager) {
+    if (!botManager) {
       throw new AppError(404, 'Менеджер не найден');
     }
 
     const updatedManager = await prisma.user.update({
       where: { id },
-      data: { isActive: !manager.isActive }
+      data: { isActive: !botManager.user.isActive }
     });
 
     res.json(updatedManager);
