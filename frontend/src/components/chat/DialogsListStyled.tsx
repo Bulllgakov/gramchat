@@ -64,8 +64,6 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId, onS
       // Если botId не передан, не добавляем его в query (загрузим все боты)
       const botParam = botId ? `&botId=${botId}` : '';
       const data = await apiService.get<{ dialogs: Dialog[] }>(`/dialogs?filter=${filter}${botParam}`);
-      console.log('Dialogs fetched:', data);
-      console.log('First dialog customerPhotoUrl:', data.dialogs?.[0]?.customerPhotoUrl);
       setDialogs(data.dialogs || []);
       setError(''); // Clear any previous errors
     } catch (err: any) {

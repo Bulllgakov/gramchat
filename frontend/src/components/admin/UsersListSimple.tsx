@@ -26,7 +26,6 @@ export function UsersListSimple() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      console.log('Fetching with token:', token);
       
       const response = await fetch(`${API_URL}/admin/users`, {
         method: 'GET',

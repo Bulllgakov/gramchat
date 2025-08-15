@@ -138,7 +138,6 @@ export function ChatWindowStyled({ dialog, showConnectButtons, userRole }: ChatW
       }
 
       const data = await response.json();
-      console.log('Rendering messages in ChatWindowStyled:', data.messages);
       if (data.messages && Array.isArray(data.messages)) {
         setMessages(data.messages);
       } else {

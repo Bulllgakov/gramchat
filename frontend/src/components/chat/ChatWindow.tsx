@@ -25,7 +25,6 @@ export function ChatWindow({ dialog, botId, onClose, showConnectButtons }: ChatW
 
   useEffect(() => {
     if (dialog) {
-      console.log('Dialog changed, fetching messages for:', dialog.id);
       fetchMessages();
       // Обновляем сообщения каждые 3 секунды
       const interval = setInterval(fetchMessages, 3000);
@@ -62,7 +61,6 @@ export function ChatWindow({ dialog, botId, onClose, showConnectButtons }: ChatW
       }
 
       const data = await response.json();
-      console.log('Fetched messages:', data);
       setMessages(data.messages || []);
       
       // Update dialog info if provided
