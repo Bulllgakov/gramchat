@@ -49,33 +49,33 @@ export function CreateBotPage() {
               Подключение Telegram бота
             </h2>
             <p className="text-gray-600">
-              Создайте бота в @BotFather и введите полученные данные
+              Подключите существующего бота из @BotFather к системе
             </p>
           </div>
 
           {/* Инструкция */}
           <div className="mb-8 bg-blue-50 rounded-lg p-6">
-            <h3 className="font-semibold text-gray-900 mb-3">Как создать бота в Telegram:</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">Как получить данные бота:</h3>
             <ol className="space-y-2 text-sm text-gray-700">
               <li className="flex gap-2">
                 <span className="font-semibold">1.</span>
-                <span>Откройте чат с @BotFather в Telegram</span>
+                <span>Если у вас уже есть бот - перейдите к шагу 3</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-semibold">2.</span>
-                <span>Отправьте команду /newbot</span>
+                <span>Если нет - создайте бота через @BotFather командой /newbot</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-semibold">3.</span>
-                <span>Придумайте имя для бота (например: "Мой магазин поддержка")</span>
+                <span>Откройте чат с @BotFather и отправьте /mybots</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-semibold">4.</span>
-                <span>Придумайте username для бота (должен заканчиваться на _bot)</span>
+                <span>Выберите вашего бота и нажмите "API Token"</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-semibold">5.</span>
-                <span>Скопируйте токен бота и вставьте его ниже</span>
+                <span>Скопируйте токен и данные бота, вставьте их ниже</span>
               </li>
             </ol>
           </div>

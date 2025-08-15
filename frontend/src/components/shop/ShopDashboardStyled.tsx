@@ -185,7 +185,13 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
             <div className="flex items-center gap-2">
               {/* Кнопка аналитики для владельцев и менеджеров */}
               <button
-                onClick={() => setShowAnalytics(true)}
+                onClick={() => {
+                  if (bots.length === 0 && user?.role === 'OWNER') {
+                    alert('Доступно после подключения ботов');
+                  } else {
+                    setShowAnalytics(true);
+                  }
+                }}
                 className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
                 title="Аналитика"
               >
@@ -198,7 +204,13 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
               {/* Кнопка управления менеджерами для владельцев */}
               {user?.role === 'OWNER' && (
                 <button
-                  onClick={() => setShowManagersPanel(true)}
+                  onClick={() => {
+                    if (bots.length === 0) {
+                      alert('Доступно после подключения ботов');
+                    } else {
+                      setShowManagersPanel(true);
+                    }
+                  }}
                   className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
                   title="Управление менеджерами"
                 >

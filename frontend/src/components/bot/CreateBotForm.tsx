@@ -134,7 +134,7 @@ export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
       if (error.response?.data?.message) {
         setErrors({ submit: error.response.data.message });
       } else {
-        setErrors({ submit: 'Произошла ошибка при создании бота' });
+        setErrors({ submit: 'Произошла ошибка при подключении бота' });
       }
     } finally {
       setIsLoading(false);
@@ -143,7 +143,7 @@ export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6">Создание нового бота</h2>
+      <h2 className="text-2xl font-bold mb-6">Подключение Telegram бота</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -257,7 +257,7 @@ export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
                 : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
             }`}
           >
-            {isLoading ? 'Создание...' : 'Создать бота'}
+            {isLoading ? 'Подключение...' : 'Подключить бота'}
           </button>
         </div>
       </form>
