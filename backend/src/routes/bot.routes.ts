@@ -190,6 +190,14 @@ router.put('/:id', authenticate, authorize('OWNER'), async (req, res, next) => {
 
     // Проверяем bot token если изменен
     if (data.botToken && data.botToken !== bot.botToken) {
+      // Проверяем валидность нового токена
+      const testBot = new TelegramBot(data.botToken, { polling: false });
+      try {
+        await testBot.getMe();
+      } catch (error: any) {
+        throw new AppError(400, 'Неверный токен бота. Проверьте правильность токена.');
+      }
+
       const existingBotByToken = await prisma.bot.findFirst({
         where: { 
           botToken: data.botToken,

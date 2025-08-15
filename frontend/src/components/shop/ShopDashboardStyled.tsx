@@ -5,6 +5,7 @@ import { Dialog } from '../chat/types';
 import { DialogTransfer } from '../owner/DialogTransfer';
 import { ManagerManagement } from '../owner/ManagerManagement';
 import { Analytics } from '../analytics/Analytics';
+import { EditBotModal } from '../bot/EditBotModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { ChatErrorBoundary } from '../ChatErrorBoundary';
@@ -26,6 +27,7 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
   const [botsLoading, setBotsLoading] = useState(true);
   const [showBotSelector, setShowBotSelector] = useState(false);
   const [showBotTypeSelector, setShowBotTypeSelector] = useState(false);
+  const [editingBot, setEditingBot] = useState<any>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -169,16 +171,34 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex-1">
                               <div className="font-medium text-gray-900">{bot.name}</div>
                               <div className="text-sm text-gray-500">@{bot.botUsername}</div>
                               <div className="text-xs text-gray-400 mt-1">{bot.category}</div>
                             </div>
-                            {selectedBot?.id === bot.id && (
-                              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {/* Кнопка редактирования - только для владельцев */}
+                              {user?.role === 'OWNER' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingBot(bot);
+                                    setShowBotSelector(false);
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                                  title="Редактировать"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              )}
+                              {selectedBot?.id === bot.id && (
+                                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
                           </div>
                         </button>
                       ))}
@@ -466,6 +486,32 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
             </button>
           </div>
         </div>
+      )}
+
+      {/* Модальное окно редактирования бота */}
+      {editingBot && (
+        <EditBotModal
+          bot={editingBot}
+          onClose={() => setEditingBot(null)}
+          onSave={(updatedBot) => {
+            // Обновляем бота в списке
+            setBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
+            // Обновляем выбранного бота если это он
+            if (selectedBot?.id === updatedBot.id) {
+              setSelectedBot(updatedBot);
+            }
+            setEditingBot(null);
+          }}
+          onDelete={(botId) => {
+            // Удаляем бота из списка
+            setBots(prev => prev.filter(b => b.id !== botId));
+            // Если удаленный бот был выбран, выбираем другой
+            if (selectedBot?.id === botId) {
+              setSelectedBot(bots.length > 1 ? 'all' : null);
+            }
+            setEditingBot(null);
+          }}
+        />
       )}
     </div>
   );
