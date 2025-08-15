@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import TelegramBot from 'node-telegram-bot-api';
 import { authenticate, authorize } from '../middleware/auth';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
@@ -103,7 +104,19 @@ router.get('/', authenticate, authorize('ADMIN'), async (req, res, next) => {
 // Create bot (for owners)
 router.post('/', authenticate, authorize('OWNER'), async (req, res, next) => {
   try {
+    console.log('Creating bot for owner:', req.user!.id);
     const data = createBotSchema.parse(req.body);
+
+    // Проверяем токен бота перед сохранением
+    const testBot = new TelegramBot(data.botToken, { polling: false });
+    let botInfo;
+    try {
+      botInfo = await testBot.getMe();
+      console.log('Bot info from Telegram:', botInfo);
+    } catch (error: any) {
+      console.error('Error validating bot token:', error.message);
+      throw new AppError(400, 'Неверный токен бота. Проверьте правильность токена и попробуйте снова.');
+    }
 
     // Проверяем, не используется ли уже такой бот в системе
     const existingBotByToken = await prisma.bot.findFirst({
@@ -133,7 +146,8 @@ router.post('/', authenticate, authorize('OWNER'), async (req, res, next) => {
     await createBot(bot.id, bot.botToken);
 
     res.status(201).json(bot);
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error creating bot:', error);
     next(error);
   }
 });

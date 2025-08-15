@@ -31,21 +31,26 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const botSelectorRef = useRef<HTMLDivElement>(null);
   
-  // Загружаем боты для владельцев
+  // Загружаем боты для владельцев и менеджеров
   useEffect(() => {
-    if ((user?.role === 'OWNER' || userRole === 'OWNER') && !shop) {
+    if ((user?.role === 'OWNER' || userRole === 'OWNER' || user?.role === 'MANAGER') && !shop) {
       loadBots();
     } else {
       setBotsLoading(false);
     }
   }, [user, userRole]);
   
-  // По умолчанию выбираем "Все боты"
+  // По умолчанию выбираем бота
   useEffect(() => {
     if (bots.length > 0 && selectedBot === null) {
-      setSelectedBot('all');
+      // Владельцы по умолчанию видят все боты, менеджеры - первый назначенный бот
+      if (user?.role === 'OWNER') {
+        setSelectedBot('all');
+      } else if (user?.role === 'MANAGER') {
+        setSelectedBot(bots[0]);
+      }
     }
-  }, [bots]);
+  }, [bots, user]);
   
   const loadBots = async () => {
     try {
@@ -95,8 +100,8 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              {/* Селектор ботов для владельцев */}
-              {user?.role === 'OWNER' && bots.length > 0 ? (
+              {/* Селектор ботов для владельцев и менеджеров */}
+              {(user?.role === 'OWNER' || user?.role === 'MANAGER') && bots.length > 0 ? (
                 <div className="relative" ref={botSelectorRef}>
                   <button
                     onClick={() => setShowBotSelector(!showBotSelector)}
@@ -123,30 +128,32 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                   
                   {showBotSelector && (
                     <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg py-2 z-50 max-h-80 overflow-y-auto">
-                      {/* Опция "Все боты" */}
-                      <button
-                        onClick={() => {
-                          setSelectedBot('all');
-                          setShowBotSelector(false);
-                          setSelectedDialog(null);
-                        }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b ${
-                          selectedBot === 'all' ? 'bg-blue-50' : ''
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium text-gray-900">Все боты</div>
-                            <div className="text-sm text-gray-500">Показать диалоги всех ботов</div>
-                            <div className="text-xs text-gray-400 mt-1">{bots.length} подключено</div>
+                      {/* Опция "Все боты" - только для владельцев */}
+                      {user?.role === 'OWNER' && (
+                        <button
+                          onClick={() => {
+                            setSelectedBot('all');
+                            setShowBotSelector(false);
+                            setSelectedDialog(null);
+                          }}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b ${
+                            selectedBot === 'all' ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">Все боты</div>
+                              <div className="text-sm text-gray-500">Показать диалоги всех ботов</div>
+                              <div className="text-xs text-gray-400 mt-1">{bots.length} подключено</div>
+                            </div>
+                            {selectedBot === 'all' && (
+                              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
                           </div>
-                          {selectedBot === 'all' && (
-                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                      </button>
+                        </button>
+                      )}
                       
                       {/* Список конкретных ботов */}
                       {bots.map((bot) => (
@@ -176,42 +183,44 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                         </button>
                       ))}
                       
-                      {/* Кнопка подключения нового бота */}
-                      <div className="border-t pt-2 px-4">
-                        <button
-                          onClick={() => {
-                            setShowBotSelector(false);
-                            setShowBotTypeSelector(true);
-                          }}
-                          className="w-full text-left py-2 text-blue-600 hover:text-blue-700 flex items-center gap-2"
-                        >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          <span>Подключить нового бота</span>
-                        </button>
-                      </div>
+                      {/* Кнопка подключения нового бота - только для владельцев */}
+                      {user?.role === 'OWNER' && (
+                        <div className="border-t pt-2 px-4">
+                          <button
+                            onClick={() => {
+                              setShowBotSelector(false);
+                              setShowBotTypeSelector(true);
+                            }}
+                            className="w-full text-left py-2 text-blue-600 hover:text-blue-700 flex items-center gap-2"
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Подключить нового бота</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               ) : (
-                <h2 className="text-xl font-bold">{shop?.name || selectedBot?.name || 'GramChat'}</h2>
+                <h2 className="text-xl font-bold">{selectedBot?.name || 'GramChat'}</h2>
               )}
               
-              {/* Показываем информацию о боте только для менеджеров (shop) или когда выбран конкретный бот */}
-              {(shop || (selectedBot && selectedBot !== 'all' && selectedBot !== null)) && (
+              {/* Показываем информацию о боте только когда выбран конкретный бот */}
+              {(selectedBot && selectedBot !== 'all' && selectedBot !== null) && (
                 <div className="flex items-center gap-3 text-blue-100 text-sm">
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span>@{(shop || selectedBot)?.botUsername || 'не подключен'}</span>
+                    <span>@{selectedBot?.botUsername || 'не подключен'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
-                    <span>{(shop || selectedBot)?.category || 'Общее'}</span>
+                    <span>{selectedBot?.category || 'Общее'}</span>
                   </div>
                 </div>
               )}
@@ -319,7 +328,7 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
             <DialogsListStyled 
               onSelectDialog={setSelectedDialog}
               selectedDialogId={selectedDialog?.id}
-              botId={selectedBot === 'all' ? undefined : (selectedBot?.id || shop?.id || 'placeholder')}
+              botId={selectedBot === 'all' ? undefined : (selectedBot?.id || 'placeholder')}
             />
           </ErrorBoundary>
         </div>
