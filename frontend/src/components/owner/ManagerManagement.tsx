@@ -16,6 +16,11 @@ interface Manager {
   isActive: boolean;
   createdAt: string;
   hasFullAccess: boolean;
+  bots?: Array<{
+    id: string;
+    name: string;
+    botUsername: string;
+  }>;
 }
 
 interface InviteCodeData {
@@ -388,6 +393,9 @@ export function ManagerManagement() {
                     Контакт
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Доступ к ботам
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Статус
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -438,6 +446,23 @@ export function ManagerManagement() {
                       <div className="text-xs text-blue-600">
                         Telegram авторизация
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {manager.bots && manager.bots.length > 0 ? (
+                        <div className="space-y-1">
+                          {manager.bots.map((bot, index) => (
+                            <div key={bot.id} className="text-xs">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+                                {bot.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          Все боты
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
