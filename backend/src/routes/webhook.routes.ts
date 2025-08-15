@@ -35,9 +35,20 @@ router.post('/telegram/webhook/:botId', async (req: any, res: any) => {
       return res.status(503).json({ error: 'Bot not initialized' });
     }
     
+    // Get bot token from database
+    const dbBot = await prisma.bot.findUnique({
+      where: { id: botId },
+      select: { botToken: true }
+    });
+    
+    if (!dbBot) {
+      logger.error(`Bot not found in database for token: ${botId}`);
+      return res.status(404).json({ error: 'Bot not found' });
+    }
+    
     // Process the update
     if (update.message) {
-      await handleMessage(botId, bot, update.message, '');
+      await handleMessage(botId, bot, update.message, dbBot.botToken);
     } else if (update.callback_query) {
       // Handle callback queries if needed
       logger.info(`Received callback query for bot ${botId}`, update.callback_query);

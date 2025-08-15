@@ -440,7 +440,7 @@ export function ChatWindowStyled({ dialog, showConnectButtons, userRole }: ChatW
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
   
-  const CustomerAvatar = memo(({ size = 42 }: { size?: number }) => {
+  const CustomerAvatar = memo(({ size = 42, marginRight = 0 }: { size?: number; marginRight?: number }) => {
     const [imageError, setImageError] = useState(false);
     const [loading, setLoading] = useState(false);
     
@@ -501,7 +501,9 @@ export function ChatWindowStyled({ dialog, showConnectButtons, userRole }: ChatW
             width: `${size}px`,
             height: `${size}px`,
             borderRadius: '50%',
-            objectFit: 'cover'
+            objectFit: 'cover',
+            marginRight: marginRight ? `${marginRight}px` : 0,
+            flexShrink: 0
           }}
           onError={() => {
             console.error('Failed to display avatar');
@@ -524,7 +526,9 @@ export function ChatWindowStyled({ dialog, showConnectButtons, userRole }: ChatW
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: `${size / 2.5}px`,
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          marginRight: marginRight ? `${marginRight}px` : 0,
+          flexShrink: 0
         }}
       >
         {getInitials(localDialog.customerName)}
@@ -701,21 +705,7 @@ export function ChatWindowStyled({ dialog, showConnectButtons, userRole }: ChatW
                     }}
                   >
                     {msg.fromUser && (
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '8px',
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                      }}>
-                        {localDialog.customerName.charAt(0).toUpperCase()}
-                      </div>
+                      <CustomerAvatar size={32} marginRight={8} />
                     )}
                     <div
                       style={{
