@@ -124,7 +124,11 @@ router.post('/', authenticate, authorize('OWNER'), async (req, res, next) => {
     });
 
     if (existingBotByToken) {
-      throw new AppError(400, 'Этот бот уже подключен. Обратитесь к владельцу бота или используйте другого бота.');
+      if (existingBotByToken.ownerId === req.user!.id) {
+        throw new AppError(400, 'Вы уже подключили этого бота. Перейдите на главную страницу и выберите его из списка.');
+      } else {
+        throw new AppError(400, 'Этот бот уже подключен другим пользователем. Используйте другого бота.');
+      }
     }
 
     const existingBotByUsername = await prisma.bot.findFirst({
@@ -132,7 +136,11 @@ router.post('/', authenticate, authorize('OWNER'), async (req, res, next) => {
     });
 
     if (existingBotByUsername) {
-      throw new AppError(400, 'Бот с таким username уже зарегистрирован в системе. Проверьте правильность username или используйте другого бота.');
+      if (existingBotByUsername.ownerId === req.user!.id) {
+        throw new AppError(400, 'Вы уже подключили бота с таким username. Перейдите на главную страницу и выберите его из списка.');
+      } else {
+        throw new AppError(400, 'Бот с таким username уже подключен другим пользователем. Проверьте правильность username.');
+      }
     }
 
     const bot = await prisma.bot.create({

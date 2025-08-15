@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import { getApiUrl } from '../../config/api.config';
@@ -48,6 +49,7 @@ function validateBotToken(token: string): boolean {
 }
 
 export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     botToken: '',
@@ -233,7 +235,16 @@ export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
 
         {errors.submit && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{errors.submit}</p>
+            <p className="text-sm text-red-600 mb-2">{errors.submit}</p>
+            {errors.submit.includes('уже подключили') && (
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+              >
+                Перейти на главную
+              </button>
+            )}
           </div>
         )}
 
