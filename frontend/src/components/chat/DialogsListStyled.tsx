@@ -42,8 +42,9 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId, onS
   const [filter, setFilter] = useState<'all' | 'my' | 'unassigned'>(getInitialFilter());
 
   useEffect(() => {
-    // Только загружаем диалоги если есть botId
-    if (botId) {
+    // Загружаем диалоги если botId определен или undefined (для всех ботов)
+    // Не загружаем только если botId === 'placeholder'
+    if (botId !== 'placeholder') {
       fetchDialogs();
       // const interval = setInterval(fetchDialogs, 10000); // Отключено для разработки
       // return () => clearInterval(interval);
@@ -51,15 +52,18 @@ export function DialogsListStyled({ onSelectDialog, selectedDialogId, botId, onS
   }, [filter, botId]);
 
   const fetchDialogs = async () => {
-    // Не делаем запрос без botId или если это placeholder
-    if (!botId || botId === 'placeholder') {
+    // Если botId === undefined, загружаем диалоги всех ботов
+    // Если botId === 'placeholder', не делаем запрос
+    if (botId === 'placeholder') {
       setDialogs([]);
       setLoading(false);
       return;
     }
 
     try {
-      const data = await apiService.get<{ dialogs: Dialog[] }>(`/dialogs?filter=${filter}&botId=${botId}`);
+      // Если botId не передан, не добавляем его в query (загрузим все боты)
+      const botParam = botId ? `&botId=${botId}` : '';
+      const data = await apiService.get<{ dialogs: Dialog[] }>(`/dialogs?filter=${filter}${botParam}`);
       console.log('Dialogs fetched:', data);
       console.log('First dialog customerPhotoUrl:', data.dialogs?.[0]?.customerPhotoUrl);
       setDialogs(data.dialogs || []);

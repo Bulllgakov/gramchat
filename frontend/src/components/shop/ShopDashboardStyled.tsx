@@ -25,6 +25,7 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
   const [selectedBot, setSelectedBot] = useState<any>(null);
   const [botsLoading, setBotsLoading] = useState(true);
   const [showBotSelector, setShowBotSelector] = useState(false);
+  const [showBotTypeSelector, setShowBotTypeSelector] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -39,10 +40,10 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
     }
   }, [user, userRole]);
   
-  // Устанавливаем первый бот как выбранный
+  // По умолчанию выбираем "Все боты"
   useEffect(() => {
-    if (bots.length > 0 && !selectedBot) {
-      setSelectedBot(bots[0]);
+    if (bots.length > 0 && selectedBot === null) {
+      setSelectedBot('all');
     }
   }, [bots]);
   
@@ -105,9 +106,14 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
                     </svg>
                     <div className="text-left">
-                      <div className="text-sm font-semibold">{selectedBot?.name || 'Выберите бота'}</div>
-                      {selectedBot && (
+                      <div className="text-sm font-semibold">
+                        {selectedBot === 'all' ? 'Все боты' : selectedBot?.name || 'Выберите бота'}
+                      </div>
+                      {selectedBot && selectedBot !== 'all' && (
                         <div className="text-xs text-blue-100">@{selectedBot.botUsername}</div>
+                      )}
+                      {selectedBot === 'all' && bots.length > 0 && (
+                        <div className="text-xs text-blue-100">{bots.length} подключено</div>
                       )}
                     </div>
                     <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,6 +123,32 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                   
                   {showBotSelector && (
                     <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg py-2 z-50 max-h-80 overflow-y-auto">
+                      {/* Опция "Все боты" */}
+                      <button
+                        onClick={() => {
+                          setSelectedBot('all');
+                          setShowBotSelector(false);
+                          setSelectedDialog(null);
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b ${
+                          selectedBot === 'all' ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">Все боты</div>
+                            <div className="text-sm text-gray-500">Показать диалоги всех ботов</div>
+                            <div className="text-xs text-gray-400 mt-1">{bots.length} подключено</div>
+                          </div>
+                          {selectedBot === 'all' && (
+                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                      
+                      {/* Список конкретных ботов */}
                       {bots.map((bot) => (
                         <button
                           key={bot.id}
@@ -143,11 +175,13 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                           </div>
                         </button>
                       ))}
+                      
+                      {/* Кнопка подключения нового бота */}
                       <div className="border-t pt-2 px-4">
                         <button
                           onClick={() => {
                             setShowBotSelector(false);
-                            navigate('/create-bot');
+                            setShowBotTypeSelector(true);
                           }}
                           className="w-full text-left py-2 text-blue-600 hover:text-blue-700 flex items-center gap-2"
                         >
@@ -284,7 +318,7 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
             <DialogsListStyled 
               onSelectDialog={setSelectedDialog}
               selectedDialogId={selectedDialog?.id}
-              botId={selectedBot?.id || shop?.id}
+              botId={selectedBot === 'all' ? undefined : (selectedBot?.id || shop?.id || 'placeholder')}
             />
           </ErrorBoundary>
         </div>
@@ -361,6 +395,65 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
                 <Analytics />
               </ErrorBoundary>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно выбора типа бота */}
+      {showBotTypeSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold mb-4">Выберите тип бота</h2>
+            <p className="text-gray-600 mb-6">Какого типа бота вы хотите подключить?</p>
+            
+            <div className="space-y-3">
+              {/* Telegram бот */}
+              <button
+                onClick={() => {
+                  setShowBotTypeSelector(false);
+                  navigate('/create-bot');
+                }}
+                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-7 h-7 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.56c-.21 2.27-1.13 7.75-1.6 10.29-.2 1.08-.59 1.44-.97 1.47-.83.07-1.46-.55-2.26-1.07-1.26-.82-1.96-1.33-3.18-2.13-1.41-.92-.5-1.42.31-2.25.21-.22 3.94-3.61 4.01-3.92.01-.04 0-.17-.06-.25s-.15-.09-.22-.07c-.09.02-1.56 1-4.41 2.91-.42.3-.8.44-1.14.44-.37 0-1.09-.21-1.63-.39-.65-.21-1.17-.33-1.13-.69.02-.19.29-.38.81-.58 3.18-1.39 5.31-2.3 6.38-2.75 3.04-1.26 3.67-1.48 4.08-1.49.09 0 .29.02.42.13.11.09.14.21.16.35-.01.04.01.19 0 .29z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Telegram бот</h3>
+                    <p className="text-sm text-gray-500">Подключите бота из Telegram</p>
+                  </div>
+                </div>
+              </button>
+              
+              {/* MAX бот - в разработке */}
+              <button
+                disabled
+                className="w-full p-4 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">MAX бот</h3>
+                    <p className="text-sm text-gray-500">Скоро будет доступно</p>
+                  </div>
+                  <span className="ml-auto text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">В разработке</span>
+                </div>
+              </button>
+            </div>
+            
+            <button
+              onClick={() => setShowBotTypeSelector(false)}
+              className="w-full mt-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Отмена
+            </button>
           </div>
         </div>
       )}
