@@ -122,19 +122,28 @@ export function CreateBotForm({ onSuccess, onCancel }: CreateBotFormProps) {
         botUsername: normalizeBotUsername(formData.botUsername)
       };
       
-      await axios.post(`${API_URL}/bots`, normalizedData, {
+      const response = await axios.post(`${API_URL}/bots`, normalizedData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       
+      console.log('Bot created successfully:', response.data);
+      alert('Бот успешно подключен!');
+      
       if (onSuccess) {
         onSuccess();
+      } else {
+        // Если нет обработчика успеха, перенаправляем на главную
+        navigate('/');
       }
     } catch (error: any) {
       console.error('Error creating bot:', error);
+      console.error('Error response:', error.response?.data);
       if (error.response?.data?.message) {
         setErrors({ submit: error.response.data.message });
+      } else if (error.response?.data?.error) {
+        setErrors({ submit: error.response.data.error });
       } else {
         setErrors({ submit: 'Произошла ошибка при подключении бота' });
       }

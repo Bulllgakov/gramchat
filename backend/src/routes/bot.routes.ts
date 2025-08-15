@@ -150,8 +150,18 @@ router.post('/', authenticate, authorize('OWNER'), async (req, res, next) => {
       }
     });
 
+    console.log('Bot created in database:', bot.id);
+
     // Create Telegram bot
-    await createBot(bot.id, bot.botToken);
+    try {
+      await createBot(bot.id, bot.botToken);
+      console.log('Telegram bot initialized successfully');
+    } catch (botError: any) {
+      console.error('Error initializing Telegram bot:', botError);
+      // Удаляем бота из БД если не удалось инициализировать
+      await prisma.bot.delete({ where: { id: bot.id } });
+      throw new AppError(500, 'Не удалось инициализировать бота. Проверьте токен и попробуйте снова.');
+    }
 
     res.status(201).json(bot);
   } catch (error: any) {
