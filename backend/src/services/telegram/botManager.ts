@@ -25,8 +25,7 @@ export async function setupTelegramBots() {
 export async function createBot(botId: string, botToken: string) {
   try {
     const bot = new TelegramBot(botToken, {
-      polling: config.NODE_ENV !== 'production',
-      webHook: config.NODE_ENV === 'production'
+      polling: config.NODE_ENV !== 'production'
     });
 
     if (config.NODE_ENV === 'production' && config.TELEGRAM_WEBHOOK_DOMAIN) {
