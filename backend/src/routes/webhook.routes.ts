@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 const router = Router();
 
 // Webhook endpoint for Telegram bots
-router.post('/telegram/webhook/:botId', async (req, res) => {
+router.post('/telegram/webhook/:botId', async (req: any, res: any) => {
   try {
     const { botId } = req.params;
     const update = req.body;
