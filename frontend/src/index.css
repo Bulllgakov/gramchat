@@ -10,11 +10,23 @@
     -moz-osx-font-smoothing: grayscale;
   }
   
+  /* Убедимся что Tailwind работает правильно для всех элементов */
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+  
   input[type="text"],
   input[type="email"],
   input[type="password"],
   select,
   textarea {
     @apply px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+}
+
+/* Специальные стили для админ панели чтобы гарантировать правильное отображение */
+@layer components {
+  .admin-panel-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
   }
 }
