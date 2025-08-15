@@ -18,6 +18,10 @@ import express, { Express, Request, Response } from 'express';
   import managerRoutes from './routes/manager.routes';
   import uploadRoutes from './routes/upload.routes';
   import analyticsRoutes from './routes/analytics.routes';
+  import webhookRoutes from './routes/webhook.routes';
+
+  // Import services
+  import { initializeAllBots } from './services/telegram/botManager';
 
   // Import middleware
   import { errorHandler } from './middleware/errorHandler';
@@ -60,6 +64,9 @@ import express, { Express, Request, Response } from 'express';
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  // Webhook routes (before other API routes, no auth required)
+  app.use('/api', webhookRoutes);
+  
   // API Routes
   app.use('/auth', authRoutes);
   app.use('/bots', botRoutes);
@@ -106,6 +113,9 @@ import express, { Express, Request, Response } from 'express';
       // Test database connection
       await prisma.$connect();
       console.log('✅ Database connected');
+
+      // Initialize all bots
+      await initializeAllBots();
 
       // Start server
       server.listen(PORT, () => {

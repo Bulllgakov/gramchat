@@ -56,11 +56,41 @@ export function getBot(botId: string): TelegramBot | undefined {
   return bots.get(botId);
 }
 
+export function getBotById(botId: string): TelegramBot | undefined {
+  return bots.get(botId);
+}
+
 export async function removeBot(botId: string) {
   const bot = bots.get(botId);
   if (bot) {
     await bot.stopPolling();
     bots.delete(botId);
     logger.info(`Bot removed for bot ${botId}`);
+  }
+}
+
+export async function initializeAllBots() {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const allBots = await prisma.bot.findMany({
+      where: { isActive: true }
+    });
+    
+    logger.info(`Initializing ${allBots.length} bots...`);
+    
+    for (const bot of allBots) {
+      try {
+        await createBot(bot.id, bot.botToken);
+        logger.info(`Bot ${bot.botUsername} initialized successfully`);
+      } catch (error) {
+        logger.error(`Failed to initialize bot ${bot.botUsername}:`, error);
+      }
+    }
+    
+    logger.info(`All bots initialized. Total active: ${bots.size}`);
+  } catch (error) {
+    logger.error('Failed to initialize bots:', error);
   }
 }
