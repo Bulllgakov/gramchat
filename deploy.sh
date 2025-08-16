@@ -1,40 +1,56 @@
 #!/bin/bash
 
-  echo "🚀 Deploying to production server..."
+# Check if commit message is provided
+if [ -z "$1" ]; then
+  echo "Usage: ./deploy.sh \"commit message\""
+  exit 1
+fi
 
-  # Проверка аргумента с сообщением коммита
-  if [ -z "$1" ]; then
-      echo "❌ Укажите сообщение коммита!"
-      echo "Использование: ./deploy.sh \"Описание изменений\""
-      exit 1
-  fi
+COMMIT_MESSAGE="$1"
 
-  # Коммит и пуш в GitHub
-  echo "📦 Отправка изменений в GitHub..."
-  git add .
-  git commit -m "$1"
-  git push origin main
+echo "🚀 Starting deployment..."
+echo "📝 Commit message: $COMMIT_MESSAGE"
 
-  # Деплой на сервер
-  echo "🔄 Обновление на сервере..."
-  ssh root@217.198.6.80 << 'ENDSSH'
-      cd /var/www/gramchat
-      echo "📥 Получение изменений из GitHub..."
-      git pull origin main
+# Add all changes
+git add -A
 
-      echo "🔨 Пересборка backend..."
-      cd backend
-      npm install --production
-      rm -rf dist/
-      npx tsc || true
-      cd ..
+# Commit changes
+git commit -m "$COMMIT_MESSAGE"
 
-      echo "🐳 Перезапуск Docker контейнеров..."
-      docker-compose -f docker-compose.production.yml build backend frontend
-      docker-compose -f docker-compose.production.yml up -d
+# Push to GitHub
+echo "📤 Pushing to GitHub..."
+git push origin main
 
-      echo "✅ Деплой завершен!"
-      docker ps | grep gramchat
+# Deploy to server
+echo "🖥️ Deploying to server..."
+ssh ulat@217.198.6.80 << 'ENDSSH'
+cd /home/ulat/gramchat
+echo "📥 Pulling latest changes..."
+git pull origin main
+
+echo "🔧 Installing backend dependencies..."
+cd backend
+npm install
+
+echo "🗄️ Generating Prisma client..."
+npx prisma generate
+
+echo "🗄️ Running database migrations..."
+npx prisma migrate deploy
+
+echo "🔧 Installing frontend dependencies..."
+cd ../frontend
+npm install
+
+echo "🏗️ Building frontend..."
+npm run build
+
+echo "🐳 Restarting Docker containers..."
+cd ..
+docker-compose down
+docker-compose up -d --build
+
+echo "✅ Deployment complete!"
 ENDSSH
 
-echo "✨ Готово! Проверьте сайт: https://web.gramchat.ru"
+echo "🎉 Deployment finished successfully!"
