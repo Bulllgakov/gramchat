@@ -31,5 +31,8 @@ export const API_CONFIG = {
   WS_URL: getWebSocketUrl(),
 };
 
+export const API_URL = API_CONFIG.API_URL;
+export const WS_URL = API_CONFIG.WS_URL;
+
 export const getApiUrl = () => API_CONFIG.API_URL;
 export const getWsUrl = () => API_CONFIG.WS_URL;
