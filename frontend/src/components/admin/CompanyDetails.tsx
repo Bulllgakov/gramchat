@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../config/api.config';
+import { API_URL } from '../../config/api.config';
 import { Loader2, Save, Building2, AlertCircle } from 'lucide-react';
 
 interface CompanyDetailsData {
@@ -63,9 +63,17 @@ export const CompanyDetails: React.FC = () => {
 
   const fetchCompanyDetails = async () => {
     try {
-      const response = await api.get('/company');
-      if (response.data) {
-        setFormData(response.data);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_URL}/company`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          setFormData(data);
+        }
       }
     } catch (err) {
       console.error('Error fetching company details:', err);
@@ -89,11 +97,25 @@ export const CompanyDetails: React.FC = () => {
     setSuccess(null);
 
     try {
-      await api.post('/company', formData);
-      setSuccess('Реквизиты успешно сохранены');
-      setTimeout(() => setSuccess(null), 5000);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_URL}/company`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        setSuccess('Реквизиты успешно сохранены');
+        setTimeout(() => setSuccess(null), 5000);
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Ошибка при сохранении реквизитов');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Ошибка при сохранении реквизитов');
+      setError('Ошибка при сохранении реквизитов');
     } finally {
       setSaving(false);
     }
