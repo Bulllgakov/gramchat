@@ -25,6 +25,10 @@ git push origin main
 echo "🖥️ Deploying to server..."
 sshpass -p 'e2+U-1.kbgL#gX' ssh -o StrictHostKeyChecking=no root@217.198.6.80 << 'ENDSSH'
 cd /opt/gramchat
+
+echo "🔒 Creating backup before deploy..."
+./backup-database.sh
+
 echo "📥 Pulling latest changes..."
 git pull origin main
 
@@ -36,7 +40,10 @@ echo "🗄️ Generating Prisma client..."
 npx prisma generate
 
 echo "🗄️ Running database migrations..."
-npx prisma migrate deploy
+npx prisma migrate deploy || {
+    echo "⚠️ Migrations failed, trying to sync schema..."
+    npx prisma db push --skip-generate
+}
 
 echo "🔧 Installing frontend dependencies..."
 cd ../frontend

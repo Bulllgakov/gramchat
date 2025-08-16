@@ -19,6 +19,8 @@ import express, { Express, Request, Response } from 'express';
   import uploadRoutes from './routes/upload.routes';
   import analyticsRoutes from './routes/analytics.routes';
   import webhookRoutes from './routes/webhook.routes';
+  import companyRoutes from './routes/company.routes';
+  import documentsRoutes from './routes/documents.routes';
 
   // Import services
   import { initializeAllBots } from './services/telegram/botManager';
@@ -77,6 +79,8 @@ import express, { Express, Request, Response } from 'express';
   app.use('/managers', managerRoutes);
   app.use('/upload', uploadRoutes);
   app.use('/analytics', analyticsRoutes);
+  app.use('/company', companyRoutes);
+  app.use('/docs', documentsRoutes);
 
   // Error handler
   app.use(errorHandler);
