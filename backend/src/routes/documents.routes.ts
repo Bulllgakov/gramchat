@@ -29,8 +29,7 @@ router.get('/:type', async (req: any, res: any, next: any) => {
       directorName: 'Иванов Иван Иванович',
       directorPosition: 'Генеральный директор',
       directorBasis: 'Устава',
-      website: 'https://gramchat.ru',
-      tbankUrl: 'https://026401027275.tb.ru'
+      website: 'https://gramchat.ru'
     };
     
     let html = '';
@@ -176,11 +175,6 @@ function generateRequisitesPage(company: any) {
           <div class="info-value">${company.directorBasis}</div>
         </div>
       </div>
-      
-      ${company.tbankUrl ? `
-      <a href="${company.tbankUrl}" target="_blank" class="bank-link">
-        Оплатить через Тбанк
-      </a>` : ''}
       
       <div class="footer">
         <p>&copy; ${new Date().getFullYear()} ${company.companyName}. Все права защищены.</p>

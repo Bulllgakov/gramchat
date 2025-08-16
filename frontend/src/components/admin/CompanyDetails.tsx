@@ -24,7 +24,6 @@ interface CompanyDetailsData {
   okpo?: string;
   oktmo?: string;
   okved?: string;
-  tbankUrl?: string;
 }
 
 export const CompanyDetails: React.FC = () => {
@@ -53,8 +52,7 @@ export const CompanyDetails: React.FC = () => {
     taxSystem: '',
     okpo: '',
     oktmo: '',
-    okved: '',
-    tbankUrl: 'https://026401027275.tb.ru'
+    okved: ''
   });
 
   useEffect(() => {
@@ -485,19 +483,6 @@ export const CompanyDetails: React.FC = () => {
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ссылка на Тбанк
-                </label>
-                <input
-                  type="url"
-                  name="tbankUrl"
-                  value={formData.tbankUrl}
-                  onChange={handleChange}
-                  placeholder="https://026401027275.tb.ru"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
             </div>
           </div>
 

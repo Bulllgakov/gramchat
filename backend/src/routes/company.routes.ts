@@ -33,9 +33,7 @@ const companyDetailsSchema = z.object({
   taxSystem: z.string().optional(),
   okpo: z.string().optional(),
   oktmo: z.string().optional(),
-  okved: z.string().optional(),
-  
-  tbankUrl: z.string().url('Некорректный URL Тбанк').optional().or(z.literal(''))
+  okved: z.string().optional()
 });
 
 // Получить реквизиты компании (публичный эндпоинт для лендинга)
@@ -52,8 +50,7 @@ router.get('/public', async (req: any, res: any, next: any) => {
         inn: '0000000000',
         legalAddress: 'Не указан',
         email: 'info@gramchat.ru',
-        phone: '+7 (800) 000-00-00',
-        tbankUrl: 'https://026401027275.tb.ru'
+        phone: '+7 (800) 000-00-00'
       });
     }
     
@@ -105,8 +102,7 @@ router.post('/', authenticate, authorize('ADMIN'), async (req: any, res: any, ne
           taxSystem: data.taxSystem || null,
           okpo: data.okpo || null,
           oktmo: data.oktmo || null,
-          okved: data.okved || null,
-          tbankUrl: data.tbankUrl || 'https://026401027275.tb.ru'
+          okved: data.okved || null
         }
       });
     } else {
@@ -123,8 +119,7 @@ router.post('/', authenticate, authorize('ADMIN'), async (req: any, res: any, ne
           taxSystem: data.taxSystem || null,
           okpo: data.okpo || null,
           oktmo: data.oktmo || null,
-          okved: data.okved || null,
-          tbankUrl: data.tbankUrl || 'https://026401027275.tb.ru'
+          okved: data.okved || null
         }
       });
     }
