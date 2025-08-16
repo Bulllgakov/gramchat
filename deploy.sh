@@ -45,9 +45,7 @@ npm install
 echo "🏗️ Building frontend..."
 npm run build
 
-echo "📁 Updating landing files..."
-cd /opt/gramchat
-cp -r landing/* /var/www/gramchat/
+echo "📁 Landing files are already in place at /opt/gramchat/landing"
 
 echo "🐳 Restarting Docker containers..."
 docker-compose down
