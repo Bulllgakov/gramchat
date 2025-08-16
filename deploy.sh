@@ -23,7 +23,7 @@ git push origin main
 
 # Deploy to server
 echo "🖥️ Deploying to server..."
-ssh ulat@217.198.6.80 << 'ENDSSH'
+ssh -i ~/.ssh/gramchat_deploy ulat@217.198.6.80 << 'ENDSSH'
 cd /home/ulat/gramchat
 echo "📥 Pulling latest changes..."
 git pull origin main
@@ -45,8 +45,11 @@ npm install
 echo "🏗️ Building frontend..."
 npm run build
 
-echo "🐳 Restarting Docker containers..."
+echo "📁 Updating landing files..."
 cd ..
+sudo cp -r landing/* /var/www/gramchat-landing/
+
+echo "🐳 Restarting Docker containers..."
 docker-compose down
 docker-compose up -d --build
 
