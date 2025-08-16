@@ -23,7 +23,7 @@ git push origin main
 
 # Deploy to server
 echo "🖥️ Deploying to server..."
-sshpass -p "${SERVER_PASSWORD:-e2+U-1.kbgL#gX}" ssh -o StrictHostKeyChecking=no ulat@217.198.6.80 << 'ENDSSH'
+sshpass -p 'e2+U-1.kbgL#gX' ssh -o StrictHostKeyChecking=no root@217.198.6.80 << 'ENDSSH'
 cd /home/ulat/gramchat
 echo "📥 Pulling latest changes..."
 git pull origin main
