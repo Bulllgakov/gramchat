@@ -279,3 +279,46 @@ enum PaymentStatus {
   FAILED
   REFUNDED
 }
+
+// Реквизиты компании
+model CompanyDetails {
+  id                String    @id @default(uuid())
+  // Основная информация
+  companyName       String    // Наименование организации
+  legalForm         String?   // ООО, ИП и т.д.
+  inn               String    @unique // ИНН
+  kpp               String?   // КПП (для юрлиц)
+  ogrn              String?   // ОГРН/ОГРНИП
+  
+  // Юридический адрес
+  legalAddress      String    
+  postalAddress     String?   // Почтовый адрес (если отличается)
+  
+  // Банковские реквизиты
+  bankName          String    
+  bik               String    
+  correspondentAccount String? // Корр. счет
+  settlementAccount String    // Расчетный счет
+  
+  // Контактная информация
+  phone             String    
+  email             String    
+  website           String?   
+  
+  // Руководитель
+  directorName      String    // ФИО директора
+  directorPosition  String    @default("Генеральный директор")
+  directorBasis     String    @default("Устава") // На основании чего действует
+  
+  // Дополнительная информация
+  taxSystem         String?   // Система налогообложения
+  okpo              String?   // ОКПО
+  oktmo             String?   // ОКТМО
+  okved             String?   // ОКВЭД
+  
+  // Ссылка на Тбанк
+  tbankUrl          String?   @default("https://026401027275.tb.ru")
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}

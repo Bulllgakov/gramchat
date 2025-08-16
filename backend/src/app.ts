@@ -20,6 +20,8 @@ import ownerRoutes from './routes/owner.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import uploadRoutes from './routes/upload.routes';
 import managerRoutes from './routes/manager.routes';
+import companyRoutes from './routes/company.routes';
+import documentsRoutes from './routes/documents.routes';
 import path from 'path';
 
 export const createApp = async () => {
@@ -90,6 +92,8 @@ export const createApp = async () => {
   app.use('/analytics', analyticsRoutes); // apiLimiter отключен для разработки
   app.use('/upload', uploadRoutes); // apiLimiter отключен для разработки
   app.use('/managers', managerRoutes); // apiLimiter отключен для разработки
+  app.use('/company', companyRoutes); // управление реквизитами компании
+  app.use('/docs', documentsRoutes); // генератор документов с реквизитами
 
   // Health check
   app.get('/health', (req, res) => {

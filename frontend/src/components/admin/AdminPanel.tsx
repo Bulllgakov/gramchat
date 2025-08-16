@@ -3,6 +3,7 @@ import { UsersList } from './UsersList';
 import { UsersListSimple } from './UsersListSimple';
 import { BotsList } from './BotsList';
 import { InviteCodesAdmin } from './InviteCodesAdmin';
+import { CompanyDetails } from './CompanyDetails';
 
 export function AdminPanel() {
   const [activeTab, setActiveTab] = useState('users');
@@ -42,6 +43,16 @@ export function AdminPanel() {
           >
             Инвайт-коды
           </button>
+          <button
+            onClick={() => setActiveTab('company')}
+            className={`px-6 py-3 text-sm font-medium ${
+              activeTab === 'company'
+                ? 'border-b-2 border-blue-500 text-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Реквизиты
+          </button>
         </nav>
       </div>
 
@@ -51,6 +62,8 @@ export function AdminPanel() {
         {activeTab === 'bots' && <BotsList />}
         
         {activeTab === 'invites' && <InviteCodesAdmin />}
+        
+        {activeTab === 'company' && <CompanyDetails />}
       </div>
     </div>
   );
