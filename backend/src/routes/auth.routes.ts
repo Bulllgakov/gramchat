@@ -8,6 +8,7 @@ import { AppError } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
 import { verifyPassword } from '../utils/password.utils';
 import { verifyTelegramAuth } from '../utils/telegram-auth.utils';
+import { SubscriptionService } from '../services/subscription.service';
 
 const router = Router();
 
@@ -137,6 +138,13 @@ router.post('/telegram-widget-login', async (req, res, next) => {
           }
         }
       });
+      
+      // Создаем подписку для нового пользователя
+      if (role === 'OWNER') {
+        // Владельцы получают бесплатный тариф по умолчанию
+        // Можно активировать триал PRO при определенных условиях
+        await SubscriptionService.createSubscription(user.id, 'FREE', false);
+      }
     } else {
       // Обновляем данные существующего пользователя
       user = await prisma.user.update({
@@ -339,6 +347,11 @@ router.post('/validate-token', async (req, res, next) => {
           // Bot assignments handled through BotManager after registration
         }
       });
+      
+      // Создаем подписку для нового пользователя
+      if (role === 'OWNER') {
+        await SubscriptionService.createSubscription(user.id, 'FREE', false);
+      }
     } else {
       user = await prisma.user.update({
         where: { id: user.id },

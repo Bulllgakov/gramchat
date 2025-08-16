@@ -51,6 +51,7 @@ model User {
   dialogActions      DialogAction[] @relation("UserActions")
   targetedActions    DialogAction[] @relation("TargetUserActions")
   inviteCode         InviteCode?    @relation("UsedInviteCode", fields: [inviteCodeId], references: [id])
+  subscription       Subscription?  // Подписка пользователя
   
   // Связи для BotManager
   botsAssignedByMe   BotManager[]   @relation("AssignedBy")
@@ -207,4 +208,74 @@ enum ActionType {
   ASSIGNED
   RELEASED
   TRANSFERRED
+}
+
+// Тарифные планы
+model Subscription {
+  id                String           @id @default(uuid())
+  userId            String           @unique
+  planType          PlanType         @default(FREE)
+  telegramBots      Int              @default(1) // Количество подключенных Telegram ботов
+  maxBots           Int              @default(1) // Количество подключенных MAX ботов
+  dialogsUsed       Int              @default(0) // Использовано диалогов в текущем месяце
+  dialogsLimit      Int              @default(100) // Лимит диалогов (0 = безлимит)
+  managersLimit     Int              @default(1) // Лимит менеджеров (0 = безлимит)
+  pricePerBot       Int              @default(0) // Цена за бота в рублях
+  totalPrice        Int              @default(0) // Общая стоимость подписки
+  trialEndsAt       DateTime?        // Дата окончания триала
+  billingPeriodEnd  DateTime?        // Конец текущего расчетного периода
+  nextPaymentDate   DateTime?        // Дата следующего платежа
+  isActive          Boolean          @default(true)
+  isTrial           Boolean          @default(false) // Триальный период
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  user              User             @relation(fields: [userId], references: [id])
+  payments          Payment[]        // История платежей
+  usageHistory      UsageHistory[]   // История использования
+}
+
+// История платежей
+model Payment {
+  id               String          @id @default(uuid())
+  subscriptionId   String
+  amount           Int             // Сумма в копейках (для точности)
+  currency         String          @default("RUB")
+  status           PaymentStatus   @default(PENDING)
+  paymentMethod    String?         // Тбанк, карта и т.д.
+  transactionId    String?         @unique // ID транзакции в платежной системе
+  paidAt           DateTime?
+  failedAt         DateTime?
+  failureReason    String?
+  createdAt        DateTime        @default(now())
+  
+  subscription     Subscription    @relation(fields: [subscriptionId], references: [id])
+}
+
+// История использования (для отслеживания лимитов)
+model UsageHistory {
+  id               String          @id @default(uuid())
+  subscriptionId   String
+  month            DateTime        // Месяц учета (первое число)
+  dialogsCount     Int             @default(0)
+  botsCount        Int             @default(0)
+  managersCount    Int             @default(0)
+  createdAt        DateTime        @default(now())
+  
+  subscription     Subscription    @relation(fields: [subscriptionId], references: [id])
+  
+  @@unique([subscriptionId, month])
+}
+
+enum PlanType {
+  FREE    // 1 бот Telegram, 1 бот MAX, 100 диалогов/мес, 1 менеджер
+  PRO     // 990₽/бот, 500 диалогов, безлимит сотрудников
+  MAX     // 3000₽/бот, безлимит диалогов и сотрудников
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
 }

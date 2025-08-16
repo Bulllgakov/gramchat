@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import TelegramBot from 'node-telegram-bot-api';
 import { authenticate, authorize } from '../middleware/auth';
+import { checkBotLimit } from '../middleware/subscription';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { createBot, removeBot } from '../services/telegram/botManager';
@@ -102,7 +103,7 @@ router.get('/', authenticate, authorize('ADMIN'), async (req, res, next) => {
 });
 
 // Create bot (for owners)
-router.post('/', authenticate, authorize('OWNER'), async (req, res, next) => {
+router.post('/', authenticate, authorize('OWNER'), checkBotLimit, async (req, res, next) => {
   try {
     console.log('Creating bot for owner:', req.user!.id);
     const data = createBotSchema.parse(req.body);
