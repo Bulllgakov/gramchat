@@ -66,7 +66,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<string> {
      .text(`КПП: ${company.kpp || '-'}`)
      .text(`ОГРН: ${company.ogrn || '-'}`)
      .text(`Юридический адрес: ${company.legalAddress}`)
-     .text(`Фактический адрес: ${company.actualAddress || company.legalAddress}`)
+     .text(`Фактический адрес: ${company.legalAddress}`)
      .moveDown();
 
   // Банковские реквизиты
@@ -75,7 +75,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<string> {
      .fontSize(10)
      .text(`Банк: ${company.bankName}`)
      .text(`БИК: ${company.bik}`)
-     .text(`Р/с: ${company.accountNumber}`)
+     .text(`Р/с: ${company.bankAccount || '-'}`)
      .text(`К/с: ${company.correspondentAccount}`)
      .moveDown(2);
 
@@ -147,7 +147,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<string> {
   const signTop = doc.y + 30;
   doc.fontSize(10)
      .text('Руководитель _________________ /', 50, signTop)
-     .text(company.ceoName || 'Генеральный директор', 250, signTop)
+     .text('Генеральный директор', 250, signTop)
      .text('/', 450, signTop)
      .moveDown(2)
      .text('М.П.', 250, signTop + 30);
@@ -160,7 +160,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<string> {
   doc.end();
 
   // Ждем завершения записи
-  await new Promise((resolve) => stream.on('finish', resolve));
+  await new Promise<void>((resolve) => stream.on('finish', resolve));
 
   // Возвращаем URL для скачивания
   return `/uploads/invoices/${fileName}`;
