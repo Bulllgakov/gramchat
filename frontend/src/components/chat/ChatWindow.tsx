@@ -92,14 +92,16 @@ export function ChatWindow({ dialog, botId, onClose, showConnectButtons }: ChatW
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
 
       setNewMessage('');
       await fetchMessages();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending message:', err);
-      alert('Ошибка отправки сообщения');
+      // Показываем сообщение об ошибке от сервера
+      alert(err.message || 'Ошибка отправки сообщения');
     } finally {
       setSending(false);
     }

@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { ChatErrorBoundary } from '../ChatErrorBoundary';
 import { ErrorBoundary } from '../ErrorBoundary';
+import SubscriptionsPage from '../../pages/SubscriptionsPage';
 
 interface ShopDashboardStyledProps {
   shop?: any;
@@ -22,6 +23,7 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showManagersPanel, setShowManagersPanel] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [bots, setBots] = useState<any[]>([]);
   const [selectedBot, setSelectedBot] = useState<any>(null);
   const [botsLoading, setBotsLoading] = useState(true);
@@ -247,6 +249,26 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Кнопка подписок для владельцев */}
+              {user?.role === 'OWNER' && (
+                <button
+                  onClick={() => {
+                    if (bots.length === 0) {
+                      alert('Доступно после подключения ботов');
+                    } else {
+                      setShowSubscriptions(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+                  title="Подписки"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <span>Подписки</span>
+                </button>
+              )}
+              
               {/* Кнопка аналитики для владельцев и менеджеров */}
               <button
                 onClick={() => {
@@ -400,6 +422,28 @@ export function ShopDashboardStyled({ shop, userRole }: ShopDashboardStyledProps
               <ErrorBoundary>
                 <ManagerManagement />
               </ErrorBoundary>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Модальное окно подписок */}
+      {showSubscriptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-semibold">Подписки</h2>
+              <button
+                onClick={() => setShowSubscriptions(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+              <SubscriptionsPage />
             </div>
           </div>
         </div>

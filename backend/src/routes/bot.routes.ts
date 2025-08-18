@@ -144,12 +144,58 @@ router.post('/', authenticate, authorize('OWNER'), checkBotLimit, async (req, re
       }
     }
 
+    // Получаем пользователя с ботами и подпиской
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: {
+        ownedBots: {
+          where: { isApproved: true }
+        },
+        subscription: true
+      }
+    });
+
+    let shouldAutoApprove = false;
+    
+    // Для владельцев без модерации (hasFullAccess: false)
+    // автоматически одобряем первого Telegram и MAX бота
+    if (user && user.role === 'OWNER' && !user.hasFullAccess) {
+      const approvedBotsCount = user.ownedBots.length;
+      // Разрешаем максимум 2 бота (1 Telegram + 1 MAX) для немодерированных владельцев
+      shouldAutoApprove = approvedBotsCount < 2;
+    }
+    // Для владельцев с полным доступом проверяем подписку
+    else if (user?.subscription) {
+      const currentBotsCount = user.ownedBots.length;
+      
+      // Для бесплатного тарифа: автоматически одобряем до лимита
+      if (user.subscription.planType === 'FREE') {
+        const totalLimit = user.subscription.telegramBotsLimit + user.subscription.maxBotsLimit;
+        shouldAutoApprove = currentBotsCount < totalLimit;
+      } 
+      // Для PRO и MAX тарифов: всегда одобряем автоматически (безлимит)
+      else if (user.subscription.planType === 'PRO' || user.subscription.planType === 'MAX') {
+        shouldAutoApprove = true;
+      }
+    }
+
     const bot = await prisma.bot.create({
       data: {
         ...data,
-        ownerId: req.user!.id
+        ownerId: req.user!.id,
+        isApproved: shouldAutoApprove // Автоматическое одобрение в рамках тарифа
       }
     });
+
+    // Увеличиваем счетчик использованных ботов только для владельцев с подпиской
+    if (user?.subscription && shouldAutoApprove && user.hasFullAccess) {
+      await prisma.subscription.update({
+        where: { userId: req.user!.id },
+        data: {
+          telegramBotsUsed: user.subscription.telegramBotsUsed + 1
+        }
+      });
+    }
 
     console.log('Bot created in database:', bot.id);
 

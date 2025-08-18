@@ -24,6 +24,7 @@ model Bot {
   managers    BotManager[] // Менеджеры через промежуточную таблицу
   dialogs     Dialog[]
   inviteCodes InviteCode[] // Инвайт-коды привязаны к владельцу, не к боту
+  botSubscription BotSubscription? // Подписка на бота
 }
 
 model User {
@@ -215,8 +216,10 @@ model Subscription {
   id                String           @id @default(uuid())
   userId            String           @unique
   planType          PlanType         @default(FREE)
-  telegramBots      Int              @default(1) // Количество подключенных Telegram ботов
-  maxBots           Int              @default(1) // Количество подключенных MAX ботов
+  telegramBotsLimit Int              @default(1) // Лимит Telegram ботов (0 = безлимит)
+  maxBotsLimit      Int              @default(1) // Лимит MAX ботов (0 = безлимит)
+  telegramBotsUsed  Int              @default(0) // Использовано Telegram ботов
+  maxBotsUsed       Int              @default(0) // Использовано MAX ботов
   dialogsUsed       Int              @default(0) // Использовано диалогов в текущем месяце
   dialogsLimit      Int              @default(100) // Лимит диалогов (0 = безлимит)
   managersLimit     Int              @default(1) // Лимит менеджеров (0 = безлимит)
@@ -233,6 +236,43 @@ model Subscription {
   user              User             @relation(fields: [userId], references: [id])
   payments          Payment[]        // История платежей
   usageHistory      UsageHistory[]   // История использования
+}
+
+// Подписка на конкретного бота
+model BotSubscription {
+  id                String           @id @default(uuid())
+  botId             String           @unique
+  bot               Bot              @relation(fields: [botId], references: [id], onDelete: Cascade)
+  botType           String           // 'TELEGRAM' или 'MAX'
+  planType          PlanType         @default(FREE)
+  billingPeriod     Int              @default(1) // Период в месяцах (1, 6, 12)
+  discount          Int              @default(0) // Скидка в процентах
+  basePrice         Int              @default(0) // Базовая цена без скидки
+  finalPrice        Int              @default(0) // Итоговая цена со скидкой
+  startDate         DateTime         @default(now())
+  endDate           DateTime?        // Дата окончания подписки
+  isActive          Boolean          @default(true)
+  autoRenew         Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  payments          BotPayment[]     // История платежей за бота
+}
+
+// Платежи за конкретного бота
+model BotPayment {
+  id                String           @id @default(uuid())
+  botSubscriptionId String
+  botSubscription   BotSubscription  @relation(fields: [botSubscriptionId], references: [id])
+  amount            Int              // Сумма в рублях
+  paymentMethod     String           // 'CARD' или 'INVOICE'
+  paymentStatus     PaymentStatus    @default(PENDING)
+  invoiceNumber     String?          // Номер счета для оплаты по счету
+  invoiceUrl        String?          // URL для скачивания PDF счета
+  transactionId     String?          @unique
+  paidAt            DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 // История платежей

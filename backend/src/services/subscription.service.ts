@@ -69,9 +69,12 @@ export class SubscriptionService {
         data: {
           userId,
           planType,
-          telegramBots: config.telegramBots || 1,
-          maxBots: config.maxBots || 1,
+          telegramBotsLimit: config.telegramBots,
+          maxBotsLimit: config.maxBots,
+          telegramBotsUsed: 0,
+          maxBotsUsed: 0,
           dialogsLimit: config.dialogsLimit,
+          dialogsUsed: 0,
           managersLimit: config.managersLimit,
           pricePerBot: config.pricePerBot,
           totalPrice: 0, // Будет рассчитываться при добавлении ботов
@@ -114,7 +117,7 @@ export class SubscriptionService {
       switch (limitType) {
         case 'bots':
           const currentBots = subscription.user.ownedBots.length;
-          const maxBots = subscription.telegramBots + subscription.maxBots;
+          const maxBots = subscription.telegramBotsLimit + subscription.maxBotsLimit;
           return {
             allowed: maxBots === 0 || currentBots < maxBots,
             current: currentBots,
@@ -232,8 +235,8 @@ export class SubscriptionService {
         where: { userId },
         data: {
           planType: newPlan,
-          telegramBots: config.telegramBots,
-          maxBots: config.maxBots,
+          telegramBotsLimit: config.telegramBots,
+          maxBotsLimit: config.maxBots,
           dialogsLimit: config.dialogsLimit,
           managersLimit: config.managersLimit,
           pricePerBot: config.pricePerBot,

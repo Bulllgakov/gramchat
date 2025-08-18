@@ -55,7 +55,7 @@ export async function canSendMessages(req: Request, res: Response, next: NextFun
       });
 
       if (!user?.hasFullAccess) {
-        throw new AppError(403, 'Отправка сообщений недоступна при ограниченном доступе');
+        throw new AppError(403, 'Ваш аккаунт на модерации. Для ускорения можете обратиться @gramchat_shop_bot');
       }
 
       return next();
