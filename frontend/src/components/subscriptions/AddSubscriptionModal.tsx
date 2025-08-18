@@ -206,9 +206,9 @@ export default function AddSubscriptionModal({ bot, bots, onClose, onSuccess }: 
                     </li>
                   ))}
                 </ul>
-                <button className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <div className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg text-center">
                   Выбрать PRO
-                </button>
+                </div>
               </div>
 
               {/* Тариф MAX */}
@@ -234,9 +234,9 @@ export default function AddSubscriptionModal({ bot, bots, onClose, onSuccess }: 
                     </li>
                   ))}
                 </ul>
-                <button className="mt-4 w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                <div className="mt-4 w-full py-2 bg-purple-600 text-white rounded-lg text-center">
                   Выбрать MAX
-                </button>
+                </div>
               </div>
             </div>
           </div>
