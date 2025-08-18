@@ -122,7 +122,31 @@ router.get('/my-subscriptions', authenticate, authorize('OWNER'), async (req, re
       }
     });
 
-    res.json(botsWithSubscriptions);
+    // Форматируем ответ для frontend
+    const formattedBots = botsWithSubscriptions.map(bot => ({
+      id: bot.id,
+      name: bot.name,
+      botUsername: bot.botUsername,
+      category: bot.category,
+      isActive: bot.isActive,
+      botSubscription: bot.botSubscription ? {
+        id: bot.botSubscription.id,
+        botType: bot.botSubscription.botType,
+        planType: bot.botSubscription.planType,
+        billingPeriod: bot.botSubscription.billingPeriod,
+        discount: bot.botSubscription.discount,
+        basePrice: bot.botSubscription.basePrice,
+        finalPrice: bot.botSubscription.finalPrice,
+        startDate: bot.botSubscription.startDate,
+        endDate: bot.botSubscription.endDate,
+        isActive: bot.botSubscription.isActive,
+        autoRenew: bot.botSubscription.autoRenew,
+        payments: bot.botSubscription.payments
+      } : null,
+      _count: bot._count
+    }));
+
+    res.json(formattedBots);
   } catch (error) {
     next(error);
   }
